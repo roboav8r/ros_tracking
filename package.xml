@@ -16,6 +16,10 @@
     <build_type>ament_cmake</build_type>
   </export>
 
+
+  <depend> gtsam </depend>
+  <exec_depend>foxglove_bridge </exec_depend>
+  <exec_depend>depthai-ros </exec_depend>
   <exec_depend>ros2launch</exec_depend>
 
 </package>

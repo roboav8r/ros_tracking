@@ -2,6 +2,14 @@
 
 # Setup
 
+## Clone repo
+
+## Install Dependencies
+```
+cd ~/my_ws/
+rosdep install -i --from-path src --rosdistro iron -y
+```
+
 ## OAK-D (optional)
 Set up udev rules
 ```
