@@ -1,6 +1,10 @@
 # ros_tracking
 
 # Setup
+## Prerequisites
+sudo apt-get install ros-$ROS_DISTRO-rosbag2 ros-$ROS_DISTRO-rosbag2-storage-mcap mcap
+
+pip install nuscenes-devkit 'mcap-protobuf-support>=0.0.8'
 
 ## Clone repo
 
