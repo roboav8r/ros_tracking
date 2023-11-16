@@ -13,6 +13,16 @@ pip install nuscenes-devkit 'mcap-protobuf-support>=0.0.8'
 cd ~/my_ws/
 rosdep install -i --from-path src --rosdistro iron -y
 ```
+### GTSAM
+```
+git clone https://github.com/borglab/gtsam.git
+cd gtsam
+mkdir buikd
+cd build
+cmake .. -DGTSAM_BUILD_PYTHON=1
+make
+make python-install
+```
 
 ## OAK-D (optional)
 Set up udev rules
