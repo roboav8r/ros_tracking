@@ -5,21 +5,6 @@ import os
 import json
 from mcap.reader import make_reader
 from mcap_protobuf.decoder import DecoderFactory
-# import argparse
-# from rclpy.serialization import deserialize_message
-# from rosidl_runtime_py.utilities import get_message
-# from std_msgs.msg import String
-# import rosbag2_py
-# 
-# 
-
-# import numpy as np
-# import matplotlib.pyplot as plt
-# import gtsam
-# from functools import partial
-# from typing import List, Optional
-# import pandas as pd
-
 
 # Params
 mcap_path = '/home/jd/nuscenes2mcap/output'
