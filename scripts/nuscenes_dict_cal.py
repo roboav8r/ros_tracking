@@ -24,6 +24,12 @@ motion_models = {
     'movable_object.barrier': {'default': 'static'},
     'movable_object.pushable_pullable': {'default': 'static'},
     'movable_object.debris': {'default': 'static'},
+    'vehicle.car': {},
+    'vehicle.bicycle': {},
+    'vehicle.truck': {},
+    'vehicle.bus.rigid': {},
+    'vehicle.construction': {},
+    'vehicle.motorcycle': {}
 }
 
 # Custom factors
@@ -180,6 +186,14 @@ def main():
     var_idx = 0
 
     # TODO - populate graph, see 
+    for key in objects:
+        obj = objects[key]
+        print(key)
+        print(obj)
+        print(motion_models[obj['category']])
+        print()
+
+
 
     # TODO - solve graph
 
