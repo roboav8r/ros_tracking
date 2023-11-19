@@ -2,9 +2,13 @@
 
 # Setup
 ## Prerequisites
-sudo apt-get install ros-$ROS_DISTRO-rosbag2 ros-$ROS_DISTRO-rosbag2-storage-mcap mcap
+Create a ros2 environment
+```
+https://robostack.github.io/GettingStarted.html
+```
+<!-- sudo apt-get install ros-$ROS_DISTRO-rosbag2 ros-$ROS_DISTRO-rosbag2-storage-mcap mcap -->
 
-pip install nuscenes-devkit 'mcap-protobuf-support>=0.0.8'
+python3 -m pip install nuscenes-devkit 'mcap-protobuf-support>=0.0.8' pandas
 
 ## Clone repo
 
@@ -17,11 +21,11 @@ rosdep install -i --from-path src --rosdistro iron -y
 ```
 git clone https://github.com/borglab/gtsam.git
 cd gtsam
-mkdir buikd
+mkdir build
 cd build
 cmake .. -DGTSAM_BUILD_PYTHON=1
 make
-make python-install
+make python-install # this will need to be done for each virtual/conda environment you use
 ```
 
 ## OAK-D (optional)
