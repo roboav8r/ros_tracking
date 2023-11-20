@@ -5,7 +5,7 @@
 # - investigate blacklist items
 
 import os
-import json
+import json, yaml
 import gtsam
 import numpy as np
 import pandas as pd
@@ -17,21 +17,9 @@ output_path = '/home/jd/tracking_ws/src/ros_tracking/data/solver'
 filepath = '/home/jd/tracking_ws/src/ros_tracking/data/dict/NuScenes-v1.0-mini-scene-0061-megvii.json'
 scene = 'NuScenes-v1.0-mini-scene-0061-megvii'
 objects = json.load(open(filepath))
-blacklist = ['ac26']
-motion_models = {
-    'human.pedestrian.adult': 'dynamic',
-    'human.pedestrian.construction_worker': 'dynamic',
-    'movable_object.trafficcone': 'static',
-    'movable_object.barrier': 'static',
-    'movable_object.pushable_pullable': 'static',
-    'movable_object.debris': 'static',
-    'vehicle.car': 'ackermann',
-    'vehicle.bicycle': 'ackermann',
-    'vehicle.truck': 'ackermann',
-    'vehicle.bus.rigid': 'ackermann',
-    'vehicle.construction': 'ackermann',
-    'vehicle.motorcycle': 'ackermann'
-}
+blacklist = ['ac26','085f', 'cfd5', '8524']
+motion_model_path = '/home/jd/tracking_ws/src/ros_tracking/config/motion_models.yaml'
+motion_models = yaml.safe_load(open(motion_model_path))
 
 # Custom factors
 def const_pos_error(constants, this: gtsam.CustomFactor,
@@ -80,6 +68,37 @@ def vel_dyn_const_error(constants, this: gtsam.CustomFactor,
     if jacobians is not None:
         jacobians[0] = -last_R.matrix()*dt/2 # last vel
         jacobians[1] = -R.matrix()*dt/2 # vel
+    return error
+
+def ack_angle_error(constants, this: gtsam.CustomFactor,
+               values: gtsam.Values,
+               jacobians: Optional[List[np.ndarray]]) -> np.ndarray:
+
+    state = constants[0]
+
+    # Extract constants from state
+    l = np.array([state['size']['z']])
+    
+    # Get variable values
+    omega_key = this.keys()[0]
+    vel_key = this.keys()[1]
+    beta_key = this.keys()[2]
+    omega, vel, beta = values.atVector(omega_key), values.atVector(vel_key), values.atVector(beta_key)
+    print(omega)
+    print(vel)
+    print(beta)
+
+    # Compute error
+    error = omega[2] - vel[0]*np.tan(beta)/l
+    print(error)
+
+    if jacobians is not None:
+        jacobians[0] = np.array([[0],[0],[1]]) # omega
+        jacobians[1] = -np.array([[1],[0],[0]]) # vel
+        jacobians[2] = 1/(np.cos(beta)**2) # beta
+        print(jacobians)
+
+    print()
     return error
 
 def vel_eq_error(this: gtsam.CustomFactor,
@@ -174,6 +193,22 @@ def omega_dyn_const_error(constants, this: gtsam.CustomFactor,
 
     return error
 
+def xtrack_error(this: gtsam.CustomFactor,
+               values: gtsam.Values,
+               jacobians: Optional[List[np.ndarray]]) -> np.ndarray:
+
+    # Get variable values
+    vel_key = this.keys()[0]
+    vel = values.atVector(vel_key)
+        
+    # Compute error
+    error = np.array([0, vel[1], 0])
+    
+    if jacobians is not None:
+        jacobians[0] = np.eye(3)
+
+    return error
+
 
 def main():
 
@@ -181,6 +216,7 @@ def main():
     graph = gtsam.NonlinearFactorGraph()
     init_values = gtsam.Values()
     unit_noise = gtsam.noiseModel.Diagonal.Sigmas(gtsam.Point3(1,1,1))
+    unit_noise_1 = gtsam.noiseModel.Diagonal.Sigmas(np.array([[1.]]))
 
     # Initialize graph variable indices
     var_idx = 0
@@ -197,7 +233,19 @@ def main():
         obj = objects[key]
         model_type = motion_models[obj['category']]
 
-        if model_type == 'dynamic':
+        if model_type=='static':
+
+            init_values.insert(gtsam.symbol('p',var_idx),gtsam.Point3(0,0,0))
+
+            # iterate through states in object, add to graph 
+            for epoch in list(obj['states']):
+                obj['states'][epoch]['p_sym'] = gtsam.symbol('p',var_idx)
+                const_pos_factor= gtsam.CustomFactor(unit_noise,[gtsam.symbol('p',var_idx)],partial(const_pos_error, [obj['states'][epoch]]))
+                graph.add(const_pos_factor)
+                
+            var_idx+=1    
+
+        elif model_type in ['dynamic','ackermann']:
 
             for epoch in list(obj['states']):
 
@@ -211,6 +259,9 @@ def main():
                     obj['states'][epoch]['v_sym'] = gtsam.symbol('v',var_idx)
                     obj['states'][epoch]['w_sym'] = gtsam.symbol('w',var_idx)
                     obj['states'][epoch]['a_sym'] = gtsam.symbol('a',var_idx)
+                    if model_type=='ackermann':      
+                        init_values.insert(gtsam.symbol('b',var_idx),np.array([[0]]))           
+                        obj['states'][epoch]['b_sym'] = gtsam.symbol('b',var_idx)
 
                     # Increment keys and indices
                     last_epoch = epoch
@@ -227,14 +278,22 @@ def main():
                     obj['states'][epoch]['v_sym'] = gtsam.symbol('v',var_idx)
                     obj['states'][epoch]['w_sym'] = gtsam.symbol('w',var_idx)
                     obj['states'][epoch]['a_sym'] = gtsam.symbol('a',var_idx)
+                    if model_type=='ackermann':          
+                        init_values.insert(gtsam.symbol('b',var_idx),np.array([[0]]))        
+                        obj['states'][epoch]['b_sym'] = gtsam.symbol('b',var_idx)
 
                     # Add Dynamics constraints
-                    vel_dyn_const= gtsam.CustomFactor(unit_noise,[gtsam.symbol('v',last_var_idx),gtsam.symbol('v',var_idx)],partial(vel_dyn_const_error, [obj['states'][last_epoch],obj['states'][epoch]]))
+                    vel_dyn_const = gtsam.CustomFactor(unit_noise,[gtsam.symbol('v',last_var_idx),gtsam.symbol('v',var_idx)],partial(vel_dyn_const_error, [obj['states'][last_epoch],obj['states'][epoch]]))
                     graph.add(vel_dyn_const)
                     acc_dyn_const= gtsam.CustomFactor(unit_noise,[gtsam.symbol('v',last_var_idx),gtsam.symbol('v',var_idx),gtsam.symbol('a',last_var_idx),gtsam.symbol('a',var_idx)],partial(acc_dyn_const_error, [obj['states'][last_epoch],obj['states'][epoch]]))
                     graph.add(acc_dyn_const)
                     omega_dyn_const= gtsam.CustomFactor(unit_noise,[gtsam.symbol('w',last_var_idx),gtsam.symbol('w',var_idx)],partial(omega_dyn_const_error, [obj['states'][last_epoch],obj['states'][epoch]]))
                     graph.add(omega_dyn_const)
+
+                    # For ackermann model, zero the cross-track velocity component
+                    if model_type=='ackermann':
+                        xtrack_const = gtsam.CustomFactor(unit_noise,[gtsam.symbol('v',var_idx)],partial(xtrack_error))
+                        graph.add(xtrack_const)
 
                     # Add equality constraints
                     acc_eq_const = gtsam.CustomFactor(unit_noise,[gtsam.symbol('a',last_var_idx),gtsam.symbol('a',var_idx)],partial(acc_eq_error))
@@ -244,6 +303,11 @@ def main():
                     if len(obj['states'])==2: # If there are only 2 points in trajectory, add constant velocity constraint to avoid underdetermination
                         vel_eq_const = gtsam.CustomFactor(unit_noise,[gtsam.symbol('v',last_var_idx),gtsam.symbol('v',var_idx)],partial(vel_eq_error))
                         graph.add(vel_eq_const)
+
+                    # For ackermann model, compute steering angle as a function of omega, velocity, and length
+                    if model_type=='ackermann':
+                        ack_angle_const = gtsam.CustomFactor(unit_noise_1,[gtsam.symbol('w',var_idx),gtsam.symbol('v',var_idx),gtsam.symbol('b',var_idx)],partial(ack_angle_error,[obj['states'][epoch]]))
+                        graph.add(ack_angle_const)
 
                     # Increment counters
                     last_epoch = epoch
@@ -260,6 +324,9 @@ def main():
                     obj['states'][epoch]['v_sym'] = gtsam.symbol('v',var_idx)
                     obj['states'][epoch]['w_sym'] = gtsam.symbol('w',var_idx)
                     obj['states'][epoch]['a_sym'] = gtsam.symbol('a',var_idx)
+                    if model_type=='ackermann':         
+                        init_values.insert(gtsam.symbol('b',var_idx),np.array([[0]]))           
+                        obj['states'][epoch]['b_sym'] = gtsam.symbol('b',var_idx)
 
                     # Add factor between last state and this state
                     vel_dyn_const= gtsam.CustomFactor(unit_noise,[gtsam.symbol('v',last_var_idx),gtsam.symbol('v',var_idx)],partial(vel_dyn_const_error, [obj['states'][last_epoch],obj['states'][epoch]]))
@@ -269,26 +336,15 @@ def main():
                     omega_dyn_const= gtsam.CustomFactor(unit_noise,[gtsam.symbol('w',last_var_idx),gtsam.symbol('w',var_idx)],partial(omega_dyn_const_error, [obj['states'][last_epoch],obj['states'][epoch]]))
                     graph.add(omega_dyn_const)
 
+                    # For ackermann model, zero the cross-track velocity component
+                    if model_type=='ackermann':
+                        xtrack_const = gtsam.CustomFactor(unit_noise,[gtsam.symbol('v',var_idx)],partial(xtrack_error))
+                        graph.add(xtrack_const)
+
                     # Increment counters
                     last_epoch = epoch
                     last_var_idx = var_idx
                     var_idx+=1
-
-
-        elif model_type=='ackermann':
-            print('ackermann')
-
-        elif model_type=='static':
-
-            init_values.insert(gtsam.symbol('p',var_idx),gtsam.Point3(0,0,0))
-
-            # iterate through states in object, add to graph 
-            for epoch in list(obj['states']):
-                obj['states'][epoch]['p_sym'] = gtsam.symbol('p',var_idx)
-                const_pos_factor= gtsam.CustomFactor(unit_noise,[gtsam.symbol('p',var_idx)],partial(const_pos_error, [obj['states'][epoch]]))
-                graph.add(const_pos_factor)
-                
-            var_idx+=1    
 
         else:
             # TODO - make this an exception
@@ -312,12 +368,12 @@ def main():
         if key in blacklist:
             continue
 
-        if model_type == 'ackermann':
-            print('ackermann')
-            continue
+        # if model_type == 'ackermann':
+        #     print('ackermann')
+        #     continue
             
         # Static model
-        elif model_type == 'static':
+        if model_type == 'static':
 
             # for state in object
             for epoch in obj['states']:
@@ -337,7 +393,7 @@ def main():
                 variable_df = pd.concat([variable_df,data],ignore_index=True)
                 
         # Dynamic model
-        elif model_type == 'dynamic':
+        elif model_type in ['dynamic', 'ackermann']:
         
             # for state in object
             for epoch in obj['states']:
@@ -357,6 +413,10 @@ def main():
                                       0,0,0]], 
                                       columns=['scene','obj','class','attribute','vel_x','vel_y','vel_z','omega_z','acc_x','acc_y','acc_z','dp_x','dp_y','dp_z'])
                 variable_df = pd.concat([variable_df,data],ignore_index=True)
+
+        else:
+            # TODO - make this an error/exception
+            print('No analysis for model type: ' + model_type)
 
     variable_df.to_csv(os.path.join(output_path,scene + '.csv'),columns = ['scene','obj','class','attribute','vel_x','vel_y','vel_z','omega_z','acc_x','acc_y','acc_z','dp_x','dp_y','dp_z'])
 

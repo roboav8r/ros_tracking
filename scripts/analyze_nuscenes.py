@@ -64,14 +64,17 @@ for cls in class_att_dict:
             motion_params[cls][att]['py_var'] = float(py_var)
             motion_params[cls][att]['pz_var'] = float(pz_var)
 
-        elif mm_type=='dynamic':
+        elif mm_type in ['dynamic','ackermann']:
 
             vx_mean = np.mean(solver_data_df.loc[(solver_data_df['class']==cls) & (solver_data_df['attribute']==att),'vel_x'])
             vy_mean = np.mean(solver_data_df.loc[(solver_data_df['class']==cls) & (solver_data_df['attribute']==att),'vel_y'])
             vz_mean = np.mean(solver_data_df.loc[(solver_data_df['class']==cls) & (solver_data_df['attribute']==att),'vel_z'])
+            omegaz_mean = np.mean(solver_data_df.loc[(solver_data_df['class']==cls) & (solver_data_df['attribute']==att),'omega_z'])
+            
             vx_var = np.var(solver_data_df.loc[(solver_data_df['class']==cls) & (solver_data_df['attribute']==att),'vel_x'])
             vy_var = np.var(solver_data_df.loc[(solver_data_df['class']==cls) & (solver_data_df['attribute']==att),'vel_y'])
             vz_var = np.var(solver_data_df.loc[(solver_data_df['class']==cls) & (solver_data_df['attribute']==att),'vel_z'])
+            omegaz_var = np.var(solver_data_df.loc[(solver_data_df['class']==cls) & (solver_data_df['attribute']==att),'omega_z'])
 
             motion_params[cls]['type'] = 'dynamic'
             motion_params[cls][att]['vx_mean'] = float(vx_mean)
@@ -80,6 +83,8 @@ for cls in class_att_dict:
             motion_params[cls][att]['vx_var'] = float(vx_var)
             motion_params[cls][att]['vy_var'] = float(vy_var)
             motion_params[cls][att]['vz_var'] = float(vz_var)
+            motion_params[cls][att]['omegaz_mean'] = float(omegaz_mean)
+            motion_params[cls][att]['omegaz_var'] = float(omegaz_var)
 
 
     print()
