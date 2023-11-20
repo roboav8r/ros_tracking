@@ -42,6 +42,26 @@ def const_pos_error(constants, this: gtsam.CustomFactor,
 
     return error
 
+def const_size_error(constants, this: gtsam.CustomFactor,
+               values: gtsam.Values,
+               jacobians: Optional[List[np.ndarray]]) -> np.ndarray:
+
+    # Get position annotation
+    state = constants[0]
+    s = gtsam.Point3(state['size']['x'],state['size']['y'],state['size']['z'])
+    
+    # Get variable values
+    size_key = this.keys()[0]
+    size = values.atVector(size_key)
+        
+    # Compute error
+    error = size - s
+    
+    if jacobians is not None:
+        jacobians[0] = np.eye(3)
+
+    return error
+
 def vel_dyn_const_error(constants, this: gtsam.CustomFactor,
                values: gtsam.Values,
                jacobians: Optional[List[np.ndarray]]) -> np.ndarray:
@@ -68,37 +88,6 @@ def vel_dyn_const_error(constants, this: gtsam.CustomFactor,
     if jacobians is not None:
         jacobians[0] = -last_R.matrix()*dt/2 # last vel
         jacobians[1] = -R.matrix()*dt/2 # vel
-    return error
-
-def ack_angle_error(constants, this: gtsam.CustomFactor,
-               values: gtsam.Values,
-               jacobians: Optional[List[np.ndarray]]) -> np.ndarray:
-
-    state = constants[0]
-
-    # Extract constants from state
-    l = np.array([state['size']['z']])
-    
-    # Get variable values
-    omega_key = this.keys()[0]
-    vel_key = this.keys()[1]
-    beta_key = this.keys()[2]
-    omega, vel, beta = values.atVector(omega_key), values.atVector(vel_key), values.atVector(beta_key)
-    print(omega)
-    print(vel)
-    print(beta)
-
-    # Compute error
-    error = omega[2] - vel[0]*np.tan(beta)/l
-    print(error)
-
-    if jacobians is not None:
-        jacobians[0] = np.array([[0],[0],[1]]) # omega
-        jacobians[1] = -np.array([[1],[0],[0]]) # vel
-        jacobians[2] = 1/(np.cos(beta)**2) # beta
-        print(jacobians)
-
-    print()
     return error
 
 def vel_eq_error(this: gtsam.CustomFactor,
@@ -216,7 +205,6 @@ def main():
     graph = gtsam.NonlinearFactorGraph()
     init_values = gtsam.Values()
     unit_noise = gtsam.noiseModel.Diagonal.Sigmas(gtsam.Point3(1,1,1))
-    unit_noise_1 = gtsam.noiseModel.Diagonal.Sigmas(np.array([[1.]]))
 
     # Initialize graph variable indices
     var_idx = 0
@@ -236,18 +224,31 @@ def main():
         if model_type=='static':
 
             init_values.insert(gtsam.symbol('p',var_idx),gtsam.Point3(0,0,0))
+            init_values.insert(gtsam.symbol('s',var_idx),gtsam.Point3(0,0,0))
+            p_sym = gtsam.symbol('p',var_idx)
+            s_sym = gtsam.symbol('s',var_idx)
 
             # iterate through states in object, add to graph 
             for epoch in list(obj['states']):
-                obj['states'][epoch]['p_sym'] = gtsam.symbol('p',var_idx)
-                const_pos_factor= gtsam.CustomFactor(unit_noise,[gtsam.symbol('p',var_idx)],partial(const_pos_error, [obj['states'][epoch]]))
+                obj['states'][epoch]['p_sym'] = p_sym
+                obj['states'][epoch]['s_sym'] = s_sym
+                const_pos_factor= gtsam.CustomFactor(unit_noise,[p_sym],partial(const_pos_error, [obj['states'][epoch]]))
+                const_size_factor= gtsam.CustomFactor(unit_noise,[s_sym],partial(const_size_error, [obj['states'][epoch]]))
                 graph.add(const_pos_factor)
+                graph.add(const_size_factor)
                 
             var_idx+=1    
 
         elif model_type in ['dynamic','ackermann']:
 
+            init_values.insert(gtsam.symbol('s',var_idx),gtsam.Point3(0,0,0))
+            s_sym = gtsam.symbol('s',var_idx)
+
             for epoch in list(obj['states']):
+
+                obj['states'][epoch]['s_sym'] = s_sym
+                const_size_factor= gtsam.CustomFactor(unit_noise,[s_sym],partial(const_size_error, [obj['states'][epoch]]))
+                graph.add(const_size_factor)
 
                 # First trajectory element
                 if epoch == list(obj['states'])[0]:
@@ -304,10 +305,10 @@ def main():
                         vel_eq_const = gtsam.CustomFactor(unit_noise,[gtsam.symbol('v',last_var_idx),gtsam.symbol('v',var_idx)],partial(vel_eq_error))
                         graph.add(vel_eq_const)
 
-                    # For ackermann model, compute steering angle as a function of omega, velocity, and length
-                    if model_type=='ackermann':
-                        ack_angle_const = gtsam.CustomFactor(unit_noise_1,[gtsam.symbol('w',var_idx),gtsam.symbol('v',var_idx),gtsam.symbol('b',var_idx)],partial(ack_angle_error,[obj['states'][epoch]]))
-                        graph.add(ack_angle_const)
+                    # # For ackermann model, compute steering angle as a function of omega, velocity, and length
+                    # if model_type=='ackermann':
+                    #     ack_angle_const = gtsam.CustomFactor(unit_noise_1,[gtsam.symbol('w',var_idx),gtsam.symbol('v',var_idx),gtsam.symbol('b',var_idx)],partial(ack_angle_error,[obj['states'][epoch]]))
+                    #     graph.add(ack_angle_const)
 
                     # Increment counters
                     last_epoch = epoch
@@ -367,11 +368,7 @@ def main():
 
         if key in blacklist:
             continue
-
-        # if model_type == 'ackermann':
-        #     print('ackermann')
-        #     continue
-            
+           
         # Static model
         if model_type == 'static':
 
@@ -385,11 +382,16 @@ def main():
                                       obj['states'][epoch]['att'] if obj['states'][epoch]['att'] else 'default',
                                       0,0,0,
                                       0,
+                                      0,
                                       0,0,0,
                                       result.atVector(obj['states'][epoch]['p_sym'])[0]-obj['states'][epoch]['pos']['x'],
                                       result.atVector(obj['states'][epoch]['p_sym'])[1]-obj['states'][epoch]['pos']['y'],
-                                      result.atVector(obj['states'][epoch]['p_sym'])[2]-obj['states'][epoch]['pos']['z']]], 
-                                      columns=['scene','obj','class','attribute','vel_x','vel_y','vel_z','omega_z','acc_x','acc_y','acc_z','dp_x','dp_y','dp_z'])
+                                      result.atVector(obj['states'][epoch]['p_sym'])[2]-obj['states'][epoch]['pos']['z'],
+                                      result.atVector(obj['states'][epoch]['s_sym'])[0]-obj['states'][epoch]['size']['x'],
+                                      result.atVector(obj['states'][epoch]['s_sym'])[1]-obj['states'][epoch]['size']['y'],
+                                      result.atVector(obj['states'][epoch]['s_sym'])[2]-obj['states'][epoch]['size']['z']],
+                                      ], 
+                                      columns=['scene','obj','class','attribute','vel_x','vel_y','vel_z','omega_z','beta','acc_x','acc_y','acc_z','dp_x','dp_y','dp_z','ds_x','ds_y','ds_z'])
                 variable_df = pd.concat([variable_df,data],ignore_index=True)
                 
         # Dynamic model
@@ -407,18 +409,22 @@ def main():
                                       result.atVector(obj['states'][epoch]['v_sym'])[1],
                                       result.atVector(obj['states'][epoch]['v_sym'])[2],
                                       result.atVector(obj['states'][epoch]['w_sym'])[2],
+                                      np.arctan(result.atVector(obj['states'][epoch]['w_sym'])[2]*obj['states'][epoch]['size']['x']/result.atVector(obj['states'][epoch]['v_sym'])[0]) if (model_type=='ackermann' and result.atVector(obj['states'][epoch]['v_sym'])[0]!=0) else 0,
                                       result.atVector(obj['states'][epoch]['a_sym'])[0],
                                       result.atVector(obj['states'][epoch]['a_sym'])[1],
                                       result.atVector(obj['states'][epoch]['a_sym'])[2],
-                                      0,0,0]], 
-                                      columns=['scene','obj','class','attribute','vel_x','vel_y','vel_z','omega_z','acc_x','acc_y','acc_z','dp_x','dp_y','dp_z'])
+                                      0,0,0,
+                                      result.atVector(obj['states'][epoch]['s_sym'])[0]-obj['states'][epoch]['size']['x'],
+                                      result.atVector(obj['states'][epoch]['s_sym'])[1]-obj['states'][epoch]['size']['y'],
+                                      result.atVector(obj['states'][epoch]['s_sym'])[2]-obj['states'][epoch]['size']['z']]], 
+                                      columns=['scene','obj','class','attribute','vel_x','vel_y','vel_z','omega_z','beta','acc_x','acc_y','acc_z','dp_x','dp_y','dp_z','ds_x','ds_y','ds_z'])
                 variable_df = pd.concat([variable_df,data],ignore_index=True)
 
         else:
             # TODO - make this an error/exception
             print('No analysis for model type: ' + model_type)
 
-    variable_df.to_csv(os.path.join(output_path,scene + '.csv'),columns = ['scene','obj','class','attribute','vel_x','vel_y','vel_z','omega_z','acc_x','acc_y','acc_z','dp_x','dp_y','dp_z'])
+    variable_df.to_csv(os.path.join(output_path,scene + '.csv'),columns = ['scene','obj','class','attribute','vel_x','vel_y','vel_z','omega_z','beta','acc_x','acc_y','acc_z','dp_x','dp_y','dp_z','ds_x','ds_y','ds_z'])
 
 
 if __name__ == "__main__":
