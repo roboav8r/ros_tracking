@@ -1,8 +1,13 @@
 
-from nuscenes.nuscenes import NuScenes
-
 import os
 import json
+
+from rclpy.serialization import serialize_message
+import rosbag2_py
+from tracking_msgs.msg import Detection3D, Detections3D
+from builtin_interfaces.msg import Time
+
+from nuscenes.nuscenes import NuScenes
 from mcap.reader import make_reader
 from mcap_protobuf.decoder import DecoderFactory
 
@@ -13,6 +18,7 @@ data_dir = '/home/jd/nuScenes/data'
 state_output_dir = '/home/jd/tracking_ws/src/ros_tracking/data/annotations'
 sensor_output_dir = '/home/jd/tracking_ws/src/ros_tracking/data/detections'
 name="v1.0-mini"
+frame_id = 'map'
 
 # Create nuscenes object
 nusc = NuScenes(version=name, dataroot=str(data_dir), verbose=True)
@@ -69,7 +75,7 @@ def mcap_to_dict(in_file):
                         "size": {'x': size.x,'y': size.y,'z': size.z},
                         "att": attribute}
                 
-                # ADD TO DETECTION DICTIONARY - indexed by object
+                # ADD TO DETECTION DICTIONARY - indexed by time
                 if current_epoch not in scene_detections.keys(): # Initialize entry if needed
                     scene_detections[current_epoch] = dict()
                     scene_detections[current_epoch]['stamp'] = t[current_epoch]
@@ -80,6 +86,7 @@ def mcap_to_dict(in_file):
                     scene_detections[current_epoch]['objects'][obj_id] = dict()
 
                 # add object to detection dictionary
+                scene_detections[current_epoch]['objects'][obj_id]['category'] = cat
                 scene_detections[current_epoch]['objects'][obj_id]['state'] = {
                         "stamp": {'seconds': tstamp.seconds, 'nanos': tstamp.nanos},
                         "pos": {'x': pos.x,'y': pos.y,'z': pos.z},
@@ -116,7 +123,7 @@ def mcap_to_dict(in_file):
                 score = entity.metadata[1].value
                 attribute = entity.metadata[1].value if entity.metadata[1].value else '' 
 
-                # ADD TO DETECTION DICTIONARY - indexed by object
+                # ADD TO DETECTION DICTIONARY - indexed by time
                 if current_epoch not in scene_detections.keys(): # Initialize entry if needed
                     scene_detections[current_epoch] = dict()
                     scene_detections[current_epoch]['stamp'] = t[current_epoch]
@@ -138,8 +145,73 @@ def mcap_to_dict(in_file):
 
     return scene_states, scene_detections
 
+def write_detections_to_mcap(det_dict, mcap_dir, filename):
+
+
+    # Create writer
+    writer = rosbag2_py.SequentialWriter()
+    writer.open(
+        rosbag2_py.StorageOptions(uri=mcap_dir + '/mcap/'+ filename, storage_id='mcap'),
+        rosbag2_py.ConverterOptions(
+            input_serialization_format="cdr", output_serialization_format="cdr"
+        ),
+    )
+
+    # Create topic
+    writer.create_topic(
+        rosbag2_py.TopicMetadata(
+            name="/detections3d", type="tracking_msgs/msg/Detections3D", serialization_format="cdr"
+        )
+    )
+
+    # Add messages to topic
+    for epoch_key in det_dict.keys():
+
+        # Create empty Detections3D message
+        dets_msg = Detections3D()
+        timestamp = Time()
+        timestamp.sec = det_dict[epoch_key]['stamp']['seconds']
+        timestamp.nanosec = det_dict[epoch_key]['stamp']['nanos']
+
+        dets_msg.header.stamp.sec = det_dict[epoch_key]['stamp']['seconds']
+        dets_msg.header.stamp.nanosec = det_dict[epoch_key]['stamp']['nanos']
+        dets_msg.header.frame_id = frame_id
+
+        for det_key in det_dict[epoch_key]['detections']:
+            det_msg = Detection3D()
+
+            # print(det_dict[epoch_key]['detections'][det_key].keys()) # ['stamp', 'category', 'score', 'pos', 'rot', 'size', 'att']
+            det_msg.pose.position.x = det_dict[epoch_key]['detections'][det_key]['pos']['x']
+            det_msg.pose.position.y = det_dict[epoch_key]['detections'][det_key]['pos']['y']
+            det_msg.pose.position.z = det_dict[epoch_key]['detections'][det_key]['pos']['z']
+
+            det_msg.pose.orientation.x = det_dict[epoch_key]['detections'][det_key]['rot']['x']
+            det_msg.pose.orientation.y = det_dict[epoch_key]['detections'][det_key]['rot']['y']
+            det_msg.pose.orientation.z = det_dict[epoch_key]['detections'][det_key]['rot']['z']
+            det_msg.pose.orientation.w = det_dict[epoch_key]['detections'][det_key]['rot']['w']
+
+            det_msg.class_string = det_dict[epoch_key]['detections'][det_key]['category']
+            det_msg.class_confidence = float(det_dict[epoch_key]['detections'][det_key]['score'])
+            det_msg.attribute = det_dict[epoch_key]['detections'][det_key]['att']
+
+            det_msg.bbox.center = det_msg.pose
+            det_msg.bbox.size.x = det_dict[epoch_key]['detections'][det_key]['size']['x']
+            det_msg.bbox.size.y = det_dict[epoch_key]['detections'][det_key]['size']['y']
+            det_msg.bbox.size.z = det_dict[epoch_key]['detections'][det_key]['size']['z']
+            
+            dets_msg.detections.append(det_msg)
+
+
+        # Write detections message to topic
+        writer.write('/detections3d', serialize_message(dets_msg), dets_msg.header.stamp.sec*10**9 + dets_msg.header.stamp.nanosec)
+
+
+    # Close writer
+    del writer
+
 def main():
     for root, _,files in os.walk(mcap_path,topdown=True):
+
         for file in files:
 
             # Get input filepath
@@ -154,6 +226,9 @@ def main():
             
             with open(os.path.join(sensor_output_dir,os.path.splitext(file)[0] + '.json'), "w") as outfile:
                 json.dump(detection_dict,outfile)
+
+            # Convert to mcap and save
+            write_detections_to_mcap(detection_dict, sensor_output_dir, os.path.splitext(file)[0])
 
 if __name__ == "__main__":
     main()

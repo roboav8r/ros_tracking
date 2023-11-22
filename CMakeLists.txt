@@ -7,18 +7,22 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 
 add_executable(ros_tracker src/ros_tracker.cpp)
-target_include_directories(ros_tracker PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+
+add_executable(det_converter src/det_converter.cpp)
+ament_target_dependencies(det_converter rclcpp std_msgs)
+
+
 target_compile_features(ros_tracker PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
-install(TARGETS ros_tracker
-  DESTINATION lib/${PROJECT_NAME})
+install(TARGETS 
+  ros_tracker
+  det_converter
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)

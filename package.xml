@@ -18,6 +18,11 @@
 
 
   <depend> gtsam </depend>
+  <depend> rclcpp </depend>
+  <depend> std_msgs </depend>
+  <depend> tracking_msgs </depend>
+  
+  
   <exec_depend>foxglove_bridge </exec_depend>
   <exec_depend>depthai-ros </exec_depend>
   <exec_depend>ros2launch</exec_depend>
