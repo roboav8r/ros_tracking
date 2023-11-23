@@ -5,6 +5,7 @@ import json
 from rclpy.serialization import serialize_message
 import rosbag2_py
 from tracking_msgs.msg import Detection3D, Detections3D
+from foxglove_msgs.msg import SceneUpdate, SceneEntity, CubePrimitive, TextPrimitive, KeyValuePair
 from builtin_interfaces.msg import Time
 
 from nuscenes.nuscenes import NuScenes
@@ -157,18 +158,26 @@ def write_detections_to_mcap(det_dict, mcap_dir, filename):
         ),
     )
 
-    # Create topic
+    # Create topics
     writer.create_topic(
         rosbag2_py.TopicMetadata(
             name="/detections3d", type="tracking_msgs/msg/Detections3D", serialization_format="cdr"
         )
     )
+    writer.create_topic(
+        rosbag2_py.TopicMetadata(
+            name="/detections3d_foxglove", type="foxglove_msgs/msg/SceneUpdate", serialization_format="cdr"
+        )
+    )
+
 
     # Add messages to topic
     for epoch_key in det_dict.keys():
 
         # Create empty Detections3D message
         dets_msg = Detections3D()
+        scene_msg = SceneUpdate()
+
         timestamp = Time()
         timestamp.sec = det_dict[epoch_key]['stamp']['seconds']
         timestamp.nanosec = det_dict[epoch_key]['stamp']['nanos']
@@ -178,9 +187,11 @@ def write_detections_to_mcap(det_dict, mcap_dir, filename):
         dets_msg.header.frame_id = frame_id
 
         for det_key in det_dict[epoch_key]['detections']:
+
+            # Populate detection message
+            # print(det_dict[epoch_key]['detections'][det_key].keys()) # ['stamp', 'category', 'score', 'pos', 'rot', 'size', 'att']
             det_msg = Detection3D()
 
-            # print(det_dict[epoch_key]['detections'][det_key].keys()) # ['stamp', 'category', 'score', 'pos', 'rot', 'size', 'att']
             det_msg.pose.position.x = det_dict[epoch_key]['detections'][det_key]['pos']['x']
             det_msg.pose.position.y = det_dict[epoch_key]['detections'][det_key]['pos']['y']
             det_msg.pose.position.z = det_dict[epoch_key]['detections'][det_key]['pos']['z']
@@ -201,9 +212,42 @@ def write_detections_to_mcap(det_dict, mcap_dir, filename):
             
             dets_msg.detections.append(det_msg)
 
+            # Populate SceneUpdate message
+            entity_msg = SceneEntity()
+            entity_msg.timestamp = dets_msg.header.stamp
+            entity_msg.frame_id = frame_id
+            entity_msg.id = str(det_key)
+            entity_msg.frame_locked = True
+            entity_msg.lifetime.nanosec = 500000000 # just under half a second so detections clear before 2Hz 
+
+            cube = CubePrimitive()
+            cube.pose.position.x = det_dict[epoch_key]['detections'][det_key]['pos']['x']
+            cube.pose.position.y = det_dict[epoch_key]['detections'][det_key]['pos']['y']
+            cube.pose.position.z = det_dict[epoch_key]['detections'][det_key]['pos']['z']
+            cube.pose.orientation.w = det_dict[epoch_key]['detections'][det_key]['rot']['w']
+            cube.pose.orientation.x = det_dict[epoch_key]['detections'][det_key]['rot']['x']
+            cube.pose.orientation.y = det_dict[epoch_key]['detections'][det_key]['rot']['y']
+            cube.pose.orientation.z = det_dict[epoch_key]['detections'][det_key]['rot']['z']
+            cube.size.x = det_dict[epoch_key]['detections'][det_key]['size']['x']
+            cube.size.y = det_dict[epoch_key]['detections'][det_key]['size']['y']
+            cube.size.z = det_dict[epoch_key]['detections'][det_key]['size']['z']
+            # cube.color.r = c[0]
+            # cube.color.g = c[1]
+            # cube.color.b = c[2]
+            # cube.color.a = det["detection_score"]
+            entity_msg.cubes.append(cube)
+
+
+            # TODO - Attribute
+
+            # TODO - Category
+
+            scene_msg.entities.append(entity_msg)
+
 
         # Write detections message to topic
         writer.write('/detections3d', serialize_message(dets_msg), dets_msg.header.stamp.sec*10**9 + dets_msg.header.stamp.nanosec)
+        writer.write('/detections3d_foxglove', serialize_message(scene_msg), dets_msg.header.stamp.sec*10**9 + dets_msg.header.stamp.nanosec)
 
 
     # Close writer

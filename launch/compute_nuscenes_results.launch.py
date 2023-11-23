@@ -1,9 +1,8 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch_ros.actions import Node
-from launch.actions import ExecuteProcess
-
+from launch.actions import ExecuteProcess, IncludeLaunchDescription
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 # TODO - programmatically find bag path
 
 def generate_launch_description():
@@ -21,5 +20,13 @@ def generate_launch_description():
     )
     ld.add_action(bag)
 
+    # Foxglove bridge for visualization
+    bridge = IncludeLaunchDescription(
+            XMLLaunchDescriptionSource(
+                os.path.join(
+                    get_package_share_directory('foxglove_bridge'),
+                    'launch/foxglove_bridge_launch.xml'))
+    )
+    ld.add_action(bridge)
 
     return ld
