@@ -30,6 +30,15 @@ def generate_launch_description():
     )
     ld.add_action(det_node)
 
+    # Tracker node
+    trk_node = Node(
+        package='ros_tracking',
+        executable='ros_tracker',
+        name='tracker_node',
+        remappings=[('/detections','/converted_detections')]
+    )
+    ld.add_action(trk_node)
+
     # Foxglove bridge for visualization
     bridge = IncludeLaunchDescription(
             XMLLaunchDescriptionSource(

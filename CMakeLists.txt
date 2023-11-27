@@ -9,11 +9,21 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(foxglove_msgs REQUIRED)
+find_package(tracking_msgs REQUIRED)
+find_package(GTSAM REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+
+include_directories( include)
+include_directories(${GTSAM_INCLUDE_DIR})
+include_directories(${EIGEN3_INCLUDE_DIR})
 
 add_executable(ros_tracker src/ros_tracker.cpp)
+ament_target_dependencies(ros_tracker rclcpp foxglove_msgs tracking_msgs GTSAM Eigen3)
 
 add_executable(det_converter src/det_converter.cpp)
-ament_target_dependencies(det_converter rclcpp std_msgs)
+ament_target_dependencies(det_converter rclcpp foxglove_msgs tracking_msgs)
 
 
 target_compile_features(ros_tracker PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
@@ -26,6 +36,8 @@ install(TARGETS
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION include/${PROJECT_NAME})
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -39,4 +51,5 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_include_directories(include)
 ament_package()
