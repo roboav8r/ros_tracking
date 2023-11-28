@@ -32,6 +32,14 @@ def generate_launch_description():
             }.items()
         ),
 
+        # Detection conversion node
+        Node(
+            package='ros_tracking',
+            executable='depthai_converter',
+            name='depthai_converter',
+            remappings=[('/depthai_detections','/oak/nn/spatial_detections')]
+        ),
+
         # Foxglove bridge for visualization
         IncludeLaunchDescription(
             XMLLaunchDescriptionSource(
