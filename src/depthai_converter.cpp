@@ -11,6 +11,7 @@
 using std::placeholders::_1;
 
 // TODO - label map to get name
+// - frame conversion - sub to /tf
 
 class DetConverter : public rclcpp::Node
 {
