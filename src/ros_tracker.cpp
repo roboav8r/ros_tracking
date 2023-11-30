@@ -2,7 +2,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-// #include "gtsam"
+// #include "gtsam/"
 // #include "gtsam/nonlinear/NonlinearFactorGraph.h"
 
 #include "tracking_msgs/msg/detections3_d.hpp"
@@ -13,6 +13,7 @@
 #include "foxglove_msgs/msg/scene_entity.hpp"
 
 #include "ros_tracking/tracking_datatypes.hpp"
+#include "ros_tracking/track_management.hpp"
 
 using std::placeholders::_1;
 
@@ -23,6 +24,7 @@ class GraphTracker : public rclcpp::Node
     : Node("graph_tracker")
     {
       // Initialize generic algorithm members
+      this->graph_det_ = TrackingDatatypes::GraphDetection();
       this->graph_dets_.reserve(this->max_dets_);
       this->graph_trks_.reserve(this->max_trks_);     
 
@@ -56,19 +58,15 @@ class GraphTracker : public rclcpp::Node
         this->trks_msg_ = tracking_msgs::msg::Tracks3D();
         this->trks_msg_.header = msg->header;
 
-        // Populate graph_dets_ vector
+        // Populate graph_dets_ vector/convert ROS msg to GTSAM datatype
         for (auto it = msg->detections.begin(); it != msg->detections.end(); it++)
         {
-            //std::cout << typeid(it).name() << std::endl;
-            RCLCPP_INFO(this->get_logger(),"Type: %s", typeid(*it).name());
-
             // Add detection message to graph_dets_ vector
-            this->graph_det_ = tracking_datatypes::GraphDetection(*it);
-            // this->graph_dets_.push_back();
+            this->graph_det_ = TrackingDatatypes::GraphDetection(*it);
+            this->graph_dets_.emplace_back(this->graph_det_);
             
         }
-
-        // Do stuff with each detection
+        RCLCPP_INFO(this->get_logger(),"Populated %li detections", this->graph_dets_.size());
 
         // Propagate existing tracks (if any)
 
@@ -94,9 +92,9 @@ class GraphTracker : public rclcpp::Node
     // Generic algorithm members
     int max_dets_{250}; 
     int max_trks_{250};
-    tracking_datatypes::GraphDetection graph_det_;
-    std::vector<tracking_datatypes::GraphDetection> graph_dets_;
-    std::vector<tracking_datatypes::GraphTrack> graph_trks_;
+    TrackingDatatypes::GraphDetection graph_det_;
+    std::vector<TrackingDatatypes::GraphDetection> graph_dets_;
+    std::vector<TrackingDatatypes::GraphTrack> graph_trks_;
 
     // ROS members
     rclcpp::Subscription<tracking_msgs::msg::Detections3D>::SharedPtr subscription_;

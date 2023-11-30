@@ -8,6 +8,7 @@
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>eigen3_cmake_module</buildtool_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
@@ -16,12 +17,13 @@
     <build_type>ament_cmake</build_type>
   </export>
 
-
   <depend> gtsam </depend>
+  <depend> eigen </depend>
   <depend> rclcpp </depend>
   <depend> std_msgs </depend>
   <depend> tracking_msgs </depend>
   <depend> foxglove_msgs </depend>
+  <depend> vision_msgs </depend>
 
   <exec_depend>foxglove_bridge </exec_depend>
   <exec_depend>depthai-ros </exec_depend>

@@ -19,6 +19,7 @@ rosdep install -i --from-path src --rosdistro iron -y
 ```
 ### GTSAM
 ```
+cd ~
 git clone https://github.com/borglab/gtsam.git
 cd gtsam
 mkdir build
@@ -26,6 +27,7 @@ cd build
 cmake .. -DGTSAM_BUILD_PYTHON=1
 make
 make python-install # this will need to be done for each virtual/conda environment you use
+sudo apt-get install ros-iron-gtsam
 ```
 
 ## OAK-D (optional)

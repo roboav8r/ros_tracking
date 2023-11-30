@@ -5,5 +5,10 @@
       i_enable_ir: true
       i_nn_type: spatial
       i_pipeline_type: RGBD
+    stereo:
+      i_subpixel: true
     nn:
       i_nn_config_path: depthai_ros_driver/yolo
+      i_disable_resize: true
+    rgb:
+      i_preview_size: 416
