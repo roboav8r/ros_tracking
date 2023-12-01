@@ -8,6 +8,8 @@
 #include "gtsam/inference/Symbol.h"
 #include "gtsam/linear/KalmanFilter.h"
 
+#include "rclcpp/time.hpp"
+#include "rclcpp/duration.hpp"
 #include "tracking_msgs/msg/detection3_d.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 
@@ -51,23 +53,62 @@ class GraphTrack
     pose(Det.pose),
     vel(gtsam::Vector3()),
     trk_id(idx),
-    timeStamp(Det.timeStamp)
+    timeCreated(Det.timeStamp),
+    timeUpdated(Det.timeStamp),
+    timeStamp(Det.timeStamp),
+    inputModel(gtsam::Matrix::Zero(6,6)),
+    input(gtsam::Vector::Zero(6)),
+    transVar(.5),
+    transModel(gtsam::Vector6(1,1,1,1,1,1).asDiagonal()),
+    transCov(gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector6(1,1,1,1,1,1))),
+    missedDets(0),
+    missedDetThresh(2),
+    timeout(0.45),
+    trackConf(Det.classConfidence),
+    trackConfThresh(.75)
     {
         this->spatialState = this->kf.init(gtsam::Vector6(this->pose.translation()[0],this->pose.translation()[1],this->pose.translation()[2],vel[0],vel[1],vel[2]),
                                            gtsam::noiseModel::Diagonal::Sigmas(gtsam::Vector6(sensor_model.posVar[0], sensor_model.posVar[1],sensor_model.posVar[2],sensor_model.posVar[0], sensor_model.posVar[1],sensor_model.posVar[2])));
     }
 
-    // Predict
-    void Predict(builtin_interfaces::msg::Time t)
+    // Helper functions to generate transition model and covariance based on dt
+    void updateTransModel()
     {
-        this->dt = (t - this->timeStamp).to_sec();
+        this->transModel(0,3) = this->dt;
+        this->transModel(1,4) = this->dt;
+        this->transModel(2,5) = this->dt;
+    }
+
+    void updateTransCov()
+    {
+        this->transCov = gtsam::noiseModel::Diagonal::Sigmas(
+            gtsam::Vector6(.25*pow(this->transVar,2)*pow(this->dt,4),
+            .25*pow(this->transVar,2)*pow(this->dt,4),
+            .25*pow(this->transVar,2)*pow(this->dt,4),
+            .5*pow(this->transVar,2)*pow(this->dt,2),
+            .5*pow(this->transVar,2)*pow(this->dt,2),
+            .5*pow(this->transVar,2)*pow(this->dt,2))
+        );
+    }
+
+    // Predict
+    void Predict(builtin_interfaces::msg::Time& t)
+    {
+        this->dt = (rclcpp::Time(t) - rclcpp::Time(this->timeStamp)).seconds();
+        this->timeStamp = rclcpp::Time(t);
+        this->updateTransModel();
+        this->updateTransCov();
+        this->spatialState = this->kf.predict(this->spatialState,this->transModel, this->inputModel, this->input, this->transCov);
     }
 
     // Update
 
     // Member variables - Admin
     uint trk_id;
-    builtin_interfaces::msg::Time timeStamp;
+    rclcpp::Time timeCreated;
+    rclcpp::Time timeUpdated;
+    rclcpp::Time timeStamp;
+    size_t missedDets;
     float dt;
 
     // Member variables - Spatial
@@ -80,8 +121,17 @@ class GraphTrack
     // GTSAM graph
     gtsam::KalmanFilter kf{6};
 
-    private:
-
+    // Object-specific properties
+    // TODO - select process model and proc noise based on object class
+    gtsam::Matrix transModel;
+    float transVar;
+    gtsam::SharedDiagonal transCov;
+    gtsam::Matrix inputModel;
+    gtsam::Vector input;
+    float timeout;
+    size_t missedDetThresh;
+    float trackConf;
+    float trackConfThresh;
 };
 
 } // Namespace

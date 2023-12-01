@@ -35,6 +35,7 @@ def generate_launch_description():
         package='ros_tracking',
         executable='ros_tracker',
         name='tracker_node',
+        output='screen',
         remappings=[('/detections','/converted_detections')]
     )
     ld.add_action(trk_node)

@@ -75,6 +75,7 @@ class GraphTracker : public rclcpp::Node
       {
         trk.Predict(msg->header.stamp);
       }
+      RCLCPP_INFO(this->get_logger(),"PREDICT %li tracks", this->graph_trks_.size());
 
       // Compute similarity with existing tracks (if there are any tracks)
 
@@ -83,9 +84,12 @@ class GraphTracker : public rclcpp::Node
       // Update tracks with assigned detections
 
       // Handle unmatched tracks (deletion)
+      this->graph_trks_ = ManageTracks::Delete(this->graph_trks_);
+      RCLCPP_INFO(this->get_logger(),"DELETE %li tracks", this->graph_trks_.size());
 
       // Handle unmatched detections (creation)
       ManageTracks::Create(this->graph_dets_, this->graph_trks_, this->sensor_model_, this->trk_idx_);
+      RCLCPP_INFO(this->get_logger(),"CREATE %li dets, %li tracks", this->graph_dets_.size(), this->graph_trks_.size());
 
       // Output 
       this->trk_publisher_->publish(trks_msg_);
