@@ -14,6 +14,7 @@
 
 #include "ros_tracking/tracking_datatypes.hpp"
 #include "ros_tracking/track_management.hpp"
+#include "ros_tracking/sensors.hpp"
 
 using std::placeholders::_1;
 
@@ -29,25 +30,24 @@ class GraphTracker : public rclcpp::Node
       this->graph_trks_.reserve(this->max_trks_);     
 
       // Initialize ROS members
+      sensor_model_ = Sensors::LinearGaussianSensor(gtsam::Vector3(.25,.25,.25));
       subscription_ = this->create_subscription<tracking_msgs::msg::Detections3D>(
       "detections", 10, std::bind(&GraphTracker::detection_callback, this, _1));
 
       trk_publisher_ = this->create_publisher<tracking_msgs::msg::Tracks3D>("tracks", 10);
       trk_scene_publisher_ = this->create_publisher<foxglove_msgs::msg::SceneUpdate>("track_scene", 10);
 
+      trk_idx_ = 0;
       dets_msg_ = tracking_msgs::msg::Detections3D();
       trk_msg_ = tracking_msgs::msg::Track3D();
       trks_msg_ = tracking_msgs::msg::Tracks3D();
       dets_msg_.detections.reserve(this->max_dets_);
       trks_msg_.tracks.reserve(this->max_trks_);
-
     }
 
   private:
     void detection_callback(const tracking_msgs::msg::Detections3D::SharedPtr msg)
     {
-      //std::cout << "callback" << std::endl;
-      // RCLCPP_INFO(this->get_logger(),"Callback");
 
       // Initialize detection storage
       this->graph_dets_.clear();
@@ -62,39 +62,46 @@ class GraphTracker : public rclcpp::Node
         for (auto it = msg->detections.begin(); it != msg->detections.end(); it++)
         {
             // Add detection message to graph_dets_ vector
-            this->graph_det_ = TrackingDatatypes::GraphDetection(*it);
+            this->graph_det_ = TrackingDatatypes::GraphDetection(*it, *msg, this->sensor_model_.posVar);
             this->graph_dets_.emplace_back(this->graph_det_);
             
         }
         RCLCPP_INFO(this->get_logger(),"Populated %li detections", this->graph_dets_.size());
-
-        // Propagate existing tracks (if any)
-
-        // Compute similarity with existing tracks (if there are any tracks)
-
-        // Solve assignment
-
-        // Update tracks with assigned detections
-
-        // Handle unmatched tracks (deletion)
-
-        // Handle unmatched detections (creation)
-
-        this->trk_publisher_->publish(trks_msg_);
-
-
-      } else { // Don't publish a message
-        return;
       }
+
+      // Propagate existing tracks (if any)
+      // TODO - parallelize this step
+      for (TrackingDatatypes::GraphTrack trk : this->graph_trks_)
+      {
+        trk.Predict(msg->header.stamp);
+      }
+
+      // Compute similarity with existing tracks (if there are any tracks)
+
+      // Solve assignment
+
+      // Update tracks with assigned detections
+
+      // Handle unmatched tracks (deletion)
+
+      // Handle unmatched detections (creation)
+      ManageTracks::Create(this->graph_dets_, this->graph_trks_, this->sensor_model_, this->trk_idx_);
+
+      // Output 
+      this->trk_publisher_->publish(trks_msg_);
            
     }
 
     // Generic algorithm members
+    uint trk_idx_;
     int max_dets_{250}; 
     int max_trks_{250};
     TrackingDatatypes::GraphDetection graph_det_;
     std::vector<TrackingDatatypes::GraphDetection> graph_dets_;
     std::vector<TrackingDatatypes::GraphTrack> graph_trks_;
+
+    // Sensor model
+    Sensors::LinearGaussianSensor sensor_model_;
 
     // ROS members
     rclcpp::Subscription<tracking_msgs::msg::Detections3D>::SharedPtr subscription_;
