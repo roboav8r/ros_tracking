@@ -7,7 +7,9 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(foxglove_msgs REQUIRED)
 find_package(vision_msgs REQUIRED)
@@ -15,7 +17,6 @@ find_package(tracking_msgs REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(GTSAM REQUIRED)
-
 
 include_directories(include) # needed for include "ros_tracking/tracking_datatypes.hpp"
 include_directories(${GTSAM_INCLUDE_DIR})
@@ -34,16 +35,23 @@ ament_target_dependencies(depthai_converter rclcpp foxglove_msgs vision_msgs)
 
 # target_compile_features(ros_tracker PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
+# Install CPP
 install(TARGETS 
   ros_tracker
   det_converter
   depthai_converter
   DESTINATION lib/${PROJECT_NAME}
 )
-
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
 install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION include/${PROJECT_NAME})
+
+# Install Python
+ament_python_install_package(${PROJECT_NAME})
+install(PROGRAMS
+  scripts/py_tracker.py
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

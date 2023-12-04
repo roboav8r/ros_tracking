@@ -9,6 +9,7 @@ from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 def generate_launch_description():
     ld = LaunchDescription()
 
+    # Play bag
     bag = ExecuteProcess(
         cmd=[
             "ros2",
@@ -26,15 +27,15 @@ def generate_launch_description():
         package='ros_tracking',
         executable='det_converter',
         name='nuscenes_converter',
-        remappings=[('/nuscenes_detections','/detections' )]
+        remappings=[('/nuscenes_detections','/detections' )],
     )
     ld.add_action(det_node)
 
     # Tracker node
     trk_node = Node(
         package='ros_tracking',
-        executable='ros_tracker',
-        name='tracker_node',
+        executable='py_tracker.py',
+        name='tracker',
         output='screen',
         remappings=[('/detections','/converted_detections')]
     )
