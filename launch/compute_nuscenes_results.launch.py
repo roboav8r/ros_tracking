@@ -15,7 +15,6 @@ def generate_launch_description():
             "ros2",
             "bag",
             "play",
-            "--loop",
             "/home/jd/nuscenes2mcap/output/NuScenes-v1.0-mini-scene-0061-megvii/NuScenes-v1.0-mini-scene-0061-megvii_0.mcap",
         ],
         output="screen",
