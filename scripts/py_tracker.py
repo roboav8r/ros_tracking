@@ -6,11 +6,14 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
+from foxglove_msgs.msg import SceneUpdate, SceneEntity
 from tracking_msgs.msg import Tracks3D, Track3D, Detections3D, Detection3D
 
+from ros_tracking.datatypes import GraphDet, GraphTrack
 from ros_tracking.assignment import ComputeAssignment
 from ros_tracking.track_management import CreateTracks, DeleteTracks
-from ros_tracking.datatypes import GraphDet, GraphTrack
+from ros_tracking.output import PublishTracks, PublishScene
+from ros_tracking.sensors import CreateSensorModels
 
 # Sensor parameters
 # TODO - add to yaml file
@@ -25,8 +28,10 @@ sensors['nuscenes-megvii']['pos_noise'] = [.2, .2, .2]
 tracker_params = dict()
 tracker_params['frame_id'] = 'map'
 tracker_params['asgn_thresh'] = 4.0
-# tracker_params['pub_topic'] = "tracks"
-# tracker_params['msg_type'] = 'Tracks3D'
+tracker_params['trk_pub_topic'] = "tracks"
+tracker_params['trk_msg_type'] = 'Tracks3D'
+tracker_params['scene_pub_topic'] = "tracks_scene"
+tracker_params['scene_msg_type'] = 'SceneUpdate'
 
 # Object parameters
 # TODO - add to yaml file
@@ -34,6 +39,20 @@ tracker_params['asgn_thresh'] = 4.0
 class Tracker(Node):
     def __init__(self, sensor_params):
         super().__init__('tracker')
+
+        # Tracker properties
+        self.frame_id = tracker_params['frame_id']
+
+        # Generate sensor models from .yaml, initialize empty callback messages
+        self.dets_msg = Detections3D()
+        CreateSensorModels(self)          
+
+        
+        # self.subscription = self.create_subscription(
+        #     eval(sensor_params['nuscenes-megvii']['msg_type']),
+        #     sensor_params['nuscenes-megvii']['topic'],
+        #     self.det_callback, 10
+        # )
 
         # Tracks and detections
         self.trk_id_count = 0
@@ -52,32 +71,40 @@ class Tracker(Node):
         self.trk_delete_timeout = 0.75
         self.trk_delete_missed_det = 2
 
-        # Create sensor subscriber objects
-        self.subscription = self.create_subscription(
-            eval(sensor_params['nuscenes-megvii']['msg_type']),
-            sensor_params['nuscenes-megvii']['topic'],
-            self.det_callback, 10
+        # Create publisher objects and empty messages
+        self.trks_msg = Tracks3D()
+        self.scene_msg = SceneUpdate()
+        self.track_pub = self.create_publisher(
+            eval(tracker_params['trk_msg_type']),
+            tracker_params['trk_pub_topic'],
+            10
+        )
+        self.scene_pub = self.create_publisher(
+            eval(tracker_params['scene_msg_type']),
+            tracker_params['scene_pub_topic'],
+            10
         )
 
-    def propagate_tracks(self, det_array_msg):
+    def propagate_tracks(self):
         for trk in self.trks:
-            trk.propagate(det_array_msg.header.stamp)
+            trk.propagate(self.dets_msg.header.stamp)
 
-    def update_tracks(self):
+    def update_tracks(self, obs_mdl, obs_var):
         for det_idx, trk_idx in zip(self.det_asgn_idx, self.trk_asgn_idx):
-            self.trks[trk_idx].update(self.dets[det_idx])
+            self.trks[trk_idx].update(self.dets[det_idx], obs_mdl, obs_var)
 
-    def det_callback(self, det_array_msg):
+    def det_callback(self, det_array_msg, obs_model, obs_variance):
+        self.dets_msg = det_array_msg
         self.dets = []
        
         # POPULATE detections list from detections message
-        self.get_logger().info("DETECT: received %i detections" % (len(det_array_msg.detections)))
-        for det in det_array_msg.detections:
-            self.dets.append(GraphDet(det_array_msg,det))
+        self.get_logger().info("DETECT: received %i detections" % (len(self.dets_msg.detections)))
+        for det in self.dets_msg.detections:
+            self.dets.append(GraphDet(self.dets_msg,det))
         self.get_logger().info("DETECT: formatted %i detections \n" % (len(self.dets)))
 
         # PROPAGATE existing tracks
-        self.propagate_tracks(det_array_msg)
+        self.propagate_tracks()
 
         # ASSIGN detections to tracks
         ComputeAssignment(self)
@@ -86,7 +113,7 @@ class Tracker(Node):
         self.get_logger().info("ASSIGN: trk assignment vector has length %li \n" % (len(self.trk_asgn_idx)))
 
         # UPDATE tracks with assigned detections
-        self.update_tracks()
+        self.update_tracks(obs_model, obs_variance)
 
         # DELETE unmatched tracks, as appropriate
         for i, trk in enumerate(self.trks):
@@ -100,6 +127,8 @@ class Tracker(Node):
         self.get_logger().info("CREATE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
             
         # OUTPUT tracker results
+        PublishTracks(self)
+        PublishScene(self)
 
 
 def main(args=None):

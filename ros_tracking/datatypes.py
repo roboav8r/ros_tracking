@@ -11,16 +11,7 @@ class GraphDet():
         # Admin
         self.timestamp = Time.from_msg(dets_msg.header.stamp)
         # TODO - id? sym?
-
-        # Sensor model parameters
-        # TODO - get these from a config file
-        self.obs_model = np.array([[1, 0, 0, 0, 0, 0],
-                     [0, 1, 0, 0, 0, 0],
-                     [0, 0, 1, 0, 0, 0]])
-        # Used for recurring updates 
-        # TODO - get from PoseWithCovariance message
-        self.obs_noise = gtsam.noiseModel.Diagonal.Sigmas([.05,.05,.1]) 
-        
+       
         # Spatial properties
         # TODO - gtsam pose, vector types
         self.pose = det_msg.pose
@@ -41,7 +32,7 @@ class GraphTrack():
         self.trk_id = id
         self.timestamp = graph_det.timestamp
         self.time_created = graph_det.timestamp
-        self.last_updated = graph_det.timestamp
+        self.time_updated = graph_det.timestamp
         self.missed_det = 0
         self.dt = 0.
 
@@ -56,7 +47,7 @@ class GraphTrack():
 
         # Kalman filter for this object
         self.kf = gtsam.KalmanFilter(6)
-        self.state = self.kf.init(np.vstack((self.pos, self.vel)), self.cov)
+        self.spatial_state = self.kf.init(np.vstack((self.pos, self.vel)), self.cov)
 
         # Process model parameters
         self.vel_variance = np.array([[0.25],[0.25],[0.1]]) # In tracker frame TODO - get this from object, attribute
@@ -78,16 +69,14 @@ class GraphTrack():
         self.timestamp = Time.from_msg(t)
         self.compute_proc_model(self.dt)
         self.compute_proc_noise(self.dt)
-        self.state = self.kf.predict(self.state,self.proc_model,np.zeros((6,6)),np.zeros((6,1)),self.proc_noise)
+        self.spatial_state = self.kf.predict(self.spatial_state,self.proc_model,np.zeros((6,6)),np.zeros((6,1)),self.proc_noise)
         self.matched = False
 
-    def update(self, det):
-        self.state = self.kf.update(self.state, det.obs_model, det.pos, det.obs_noise)
+    def update(self, det, obs_model, obs_noise):
+        self.spatial_state = self.kf.update(self.spatial_state, obs_model, det.pos, obs_noise)
         self.timestamp = det.timestamp
-        self.last_updated = det.timestamp
+        self.time_updated = det.timestamp
         self.missed_det = 0
-        # self.detection_id = det.detection_id
-        # self.matched = True
         # if det.size is not [0,0,0]: # Only update box size if it's available
         #     self.obj_depth, self.obj_width, self.obj_height = det.obj_depth, det.obj_width, det.obj_height
         # self.transform = det.trk_transform
