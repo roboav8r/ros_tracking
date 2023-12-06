@@ -3,7 +3,7 @@ import numpy as np
 
 def Cost(det, track):
     # Euclidean distance between positions
-    return np.linalg.norm(det.pos[:,0] - track.state.mean()[0:3])
+    return np.linalg.norm(det.pos[:,0] - track.spatial_state.mean()[0:3])
 
 def ComputeCostMatrix(tracker):
     tracker.cost_matrix = np.zeros((len(tracker.dets),len(tracker.trks)))

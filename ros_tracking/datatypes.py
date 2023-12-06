@@ -22,12 +22,12 @@ class GraphDet():
         # TODO - GTSAM distribution
         # self.class_id 
         self.class_string = det_msg.class_string
-        self.class_conf = det_msg.class_confidence
-        self.attribute = det_msg.attribute
+        # self.class_conf = det_msg.class_confidence
+        # self.attribute = det_msg.attribute
 
 
 class GraphTrack():
-    def __init__(self, id, graph_det):
+    def __init__(self, id, graph_det, prob_class_det, det_idx_map):
         # Admin
         self.trk_id = id
         self.timestamp = graph_det.timestamp
@@ -37,8 +37,7 @@ class GraphTrack():
         self.dt = 0.
 
         # Get semantic parameters
-        # TODO - compute this based on detection probability
-        self.prob_existence = graph_det.class_conf # probability of existence 
+        self.class_dist = gtsam.DiscreteDistribution(prob_class_det.likelihood(det_idx_map[graph_det.class_string]))
 
         # Initialize spatial state
         self.pos = graph_det.pos
@@ -72,11 +71,12 @@ class GraphTrack():
         self.spatial_state = self.kf.predict(self.spatial_state,self.proc_model,np.zeros((6,6)),np.zeros((6,1)),self.proc_noise)
         self.matched = False
 
-    def update(self, det, obs_model, obs_noise):
+    def update(self, det, obs_model, obs_noise, prob_class_det, det_idx_map):
         self.spatial_state = self.kf.update(self.spatial_state, obs_model, det.pos, obs_noise)
         self.timestamp = det.timestamp
         self.time_updated = det.timestamp
         self.missed_det = 0
+        self.class_dist = gtsam.DiscreteDistribution(prob_class_det.likelihood(det_idx_map[det.class_string])*self.class_dist)
         # if det.size is not [0,0,0]: # Only update box size if it's available
         #     self.obj_depth, self.obj_width, self.obj_height = det.obj_depth, det.obj_width, det.obj_height
         # self.transform = det.trk_transform

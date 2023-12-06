@@ -2,7 +2,7 @@
 # import geometry_msgs
 
 from tracking_msgs.msg import Track3D, Tracks3D
-from foxglove_msgs.msg import SceneEntity, SceneUpdate, ArrowPrimitive, CubePrimitive
+from foxglove_msgs.msg import SceneEntity, SceneUpdate, ArrowPrimitive, CubePrimitive, TextPrimitive
 from builtin_interfaces.msg import Duration
 
 def PublishTracks(tracker):
@@ -34,7 +34,9 @@ def PublishTracks(tracker):
         # trk_msg.width = 
         # trk_msg.depth = 
     
-        # TODO - Add semantic information to message
+        # Add semantic information to message
+        trk_msg.class_confidence = trk.class_dist(trk.class_dist.argmax())
+        trk_msg.class_string = tracker.object_classes[trk.class_dist.argmax()]
 
         tracker.trks_msg.tracks.append(trk_msg)
 
@@ -55,7 +57,6 @@ def PublishScene(tracker):
         entity_msg.id = str(trk.trk_id)
         entity_msg.frame_locked = True
         entity_msg.lifetime.nanosec = 500000000
-
 
         # Add spatial information to message
         # vel_quat = Quaternion(trk.spatial_state.mean()[3],trk.spatial_state.mean()[4],trk.spatial_state.mean()[5],0)
@@ -79,6 +80,19 @@ def PublishScene(tracker):
         entity_msg.cubes.append(cube)
 
         # TODO - Add semantic information to message
+        text = TextPrimitive()
+        text.billboard = True
+        text.font_size = 12.
+        text.scale_invariant = True
+        text.color.a = 1.0
+        text.pose.position.x = trk.spatial_state.mean()[0]
+        text.pose.position.y = trk.spatial_state.mean()[1]
+        text.pose.position.z = trk.spatial_state.mean()[2]
+        text.text = tracker.object_classes[trk.class_dist.argmax()] + ' ' + str(round(trk.class_dist(trk.class_dist.argmax()),2)) + '%'
+        entity_msg.texts.append(text)
+
+        # Textprimitive
+        # metadata
         tracker.scene_msg.entities.append(entity_msg)
     
     # Publish scene message

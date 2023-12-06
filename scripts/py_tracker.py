@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import gtsam
 import numpy as np
 
 import rclpy
@@ -47,14 +48,19 @@ class Tracker(Node):
         self.dets_msg = Detections3D()
         CreateSensorModels(self)          
 
-        
-        # self.subscription = self.create_subscription(
-        #     eval(sensor_params['nuscenes-megvii']['msg_type']),
-        #     sensor_params['nuscenes-megvii']['topic'],
-        #     self.det_callback, 10
-        # )
+        # TODO - Get tracker parameters from config file
+        self.class_idx_map = dict()
+        self.object_classes =  ['false_detection', 'void_ignore', 'bicycle', 'bus', 'car', 'motorcycle', 'pedestrian', 'trailer', 'truck']
+        for idx, class_name in enumerate(self.object_classes):
+            self.class_idx_map[class_name] = idx
 
-        # Tracks and detections
+        # Track management
+        # TODO - read this in from a file, OR assign to object parameters
+        self.trk_delete_prob = 0.35
+        self.trk_delete_timeout = 0.75
+        self.trk_delete_missed_det = 2
+
+        # Track and detection objects
         self.trk_id_count = 0
         self.dets = []
         self.trks = []
@@ -64,12 +70,6 @@ class Tracker(Node):
         self.det_asgn_idx = [] 
         self.trk_asgn_idx = []
         self.asgn_thresh = tracker_params['asgn_thresh']
-
-        # Track management
-        # TODO - read this in from a file, OR assign to object parameters
-        self.trk_delete_prob = 0.35
-        self.trk_delete_timeout = 0.75
-        self.trk_delete_missed_det = 2
 
         # Create publisher objects and empty messages
         self.trks_msg = Tracks3D()
@@ -89,11 +89,11 @@ class Tracker(Node):
         for trk in self.trks:
             trk.propagate(self.dets_msg.header.stamp)
 
-    def update_tracks(self, obs_mdl, obs_var):
+    def update_tracks(self, obs_mdl, obs_var, prob_class_det, det_idx_map):
         for det_idx, trk_idx in zip(self.det_asgn_idx, self.trk_asgn_idx):
-            self.trks[trk_idx].update(self.dets[det_idx], obs_mdl, obs_var)
+            self.trks[trk_idx].update(self.dets[det_idx], obs_mdl, obs_var, prob_class_det, det_idx_map)
 
-    def det_callback(self, det_array_msg, obs_model, obs_variance):
+    def det_callback(self, det_array_msg, obs_model, obs_variance, prob_class_det, det_idx_map):
         self.dets_msg = det_array_msg
         self.dets = []
        
@@ -113,17 +113,18 @@ class Tracker(Node):
         self.get_logger().info("ASSIGN: trk assignment vector has length %li \n" % (len(self.trk_asgn_idx)))
 
         # UPDATE tracks with assigned detections
-        self.update_tracks(obs_model, obs_variance)
+        self.update_tracks(obs_model, obs_variance, prob_class_det, det_idx_map)
 
         # DELETE unmatched tracks, as appropriate
         for i, trk in enumerate(self.trks):
             if i not in self.trk_asgn_idx: # If track is unmatched
-                trk.missed_det +=1 # Increment missed detection counter # TODO - OR update existence probability
+                trk.class_dist = gtsam.DiscreteDistribution(prob_class_det.likelihood(det_idx_map['missed_detection']))
+                trk.missed_det +=1 # Increment missed detection counter 
         DeleteTracks(self)
         self.get_logger().info("DELETE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 
         # CREATE tracks from unmatched detections, as appropriate
-        CreateTracks(self)
+        CreateTracks(self, prob_class_det, det_idx_map)
         self.get_logger().info("CREATE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
             
         # OUTPUT tracker results
