@@ -1,9 +1,7 @@
 #include <memory>
+#include <algorithm>
 
 #include "rclcpp/rclcpp.hpp"
-
-// #include "gtsam/"
-// #include "gtsam/nonlinear/NonlinearFactorGraph.h"
 
 #include "tracking_msgs/msg/detections3_d.hpp"
 #include "tracking_msgs/msg/detection3_d.hpp"
@@ -14,6 +12,8 @@
 
 #include "ros_tracking/tracking_datatypes.hpp"
 #include "ros_tracking/track_management.hpp"
+#include "ros_tracking/hungarian.hpp"
+#include "ros_tracking/assignment.hpp"
 #include "ros_tracking/sensors.hpp"
 
 using std::placeholders::_1;
@@ -27,7 +27,18 @@ class GraphTracker : public rclcpp::Node
       // Initialize generic algorithm members
       this->graph_det_ = TrackingDatatypes::GraphDetection();
       this->graph_dets_.reserve(this->max_dets_);
-      this->graph_trks_.reserve(this->max_trks_);     
+      this->graph_trks_.reserve(this->max_trks_);  
+
+      // Initialize assignment vector and cost matrix
+      this->ha_ = HungarianAlgorithm();
+      this->assignment_vector_.reserve(std::max(this->max_dets_,this->max_trks_));
+      for (size_t ii=0 ; ii < this->max_trks_; ii++) // iterate through rows
+      {
+          for (size_t jj=0 ; jj<this->max_dets_; jj++) // iterate through column values
+          {
+              this->cost_matrix_[ii][jj] = 0.;
+          }
+      }
 
       // Initialize ROS members
       sensor_model_ = Sensors::LinearGaussianSensor(gtsam::Vector3(.25,.25,.25));
@@ -77,9 +88,14 @@ class GraphTracker : public rclcpp::Node
       }
       RCLCPP_INFO(this->get_logger(),"PREDICT %li tracks", this->graph_trks_.size());
 
-      // Compute similarity with existing tracks (if there are any tracks)
+      // Compute similarity/cost matrix 
+      this->cost_matrix_.clear();
+      Assignment::ComputeCostMatrix(this->graph_dets_, this->graph_trks_, this->cost_matrix_); 
 
       // Solve assignment
+      this->cost_ = ha_.Solve(this->cost_matrix_, this->assignment_vector_);
+      std::cout << this->assignment_vector_.size() << std::endl;
+      //std::cout << this->assignment_vector_ << std::endl;
 
       // Update tracks with assigned detections
 
@@ -98,11 +114,17 @@ class GraphTracker : public rclcpp::Node
 
     // Generic algorithm members
     uint trk_idx_;
-    int max_dets_{250}; 
-    int max_trks_{250};
+    size_t max_dets_{250}; 
+    size_t max_trks_{250};
     TrackingDatatypes::GraphDetection graph_det_;
     std::vector<TrackingDatatypes::GraphDetection> graph_dets_;
     std::vector<TrackingDatatypes::GraphTrack> graph_trks_;
+
+    // Assignment
+    HungarianAlgorithm ha_;
+    std::vector<std::vector<double>> cost_matrix_;
+    std::vector<int> assignment_vector_;
+    double cost_;
 
     // Sensor model
     Sensors::LinearGaussianSensor sensor_model_;
