@@ -87,7 +87,7 @@ def PublishScene(tracker):
         text.pose.position.x = trk.spatial_state.mean()[0]
         text.pose.position.y = trk.spatial_state.mean()[1]
         text.pose.position.z = trk.spatial_state.mean()[2]
-        text.text = "%s: %.0f %%" % (tracker.object_classes[trk.class_dist.argmax()], trk.class_dist(trk.class_dist.argmax())*100)
+        text.text = "%s-%.0f: %.0f %%" % (tracker.object_classes[trk.class_dist.argmax()], trk.trk_id, trk.class_dist(trk.class_dist.argmax())*100)
         entity_msg.texts.append(text)
 
         # Textprimitive

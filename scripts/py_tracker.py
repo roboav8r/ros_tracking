@@ -85,18 +85,18 @@ class Tracker(Node):
         # UPDATE tracks with assigned detections
         self.update_tracks(obs_model, obs_variance, prob_class_det, det_idx_map)
 
-        # DELETE unmatched tracks, as appropriate
+        # UPDATE unmatched tracks (missed detections)
         for i, trk in enumerate(self.trks):
-            if i not in self.trk_asgn_idx: # If track is unmatched
+            if i not in self.trk_asgn_idx: # If track is unmatched, handle it as a missed detection
                 trk.class_dist = gtsam.DiscreteDistribution(prob_class_det.likelihood(det_idx_map['missed_detection']))
-                trk.missed_det +=1 # Increment missed detection counter 
         DeleteTracks(self)
         self.get_logger().info("DELETE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
+
 
         # CREATE tracks from unmatched detections, as appropriate
         CreateTracks(self, prob_class_det, det_idx_map)
         self.get_logger().info("CREATE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
-            
+
         # OUTPUT tracker results
         PublishTracks(self)
         PublishScene(self)

@@ -10,7 +10,8 @@ def CreateTrack(tracker, det, prob_class_det, det_idx_map):
 
 def ValidTrack(trk, tracker):
     # return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore']) and ((trk.missed_det < tracker.trk_delete_missed_det) or ((tracker.get_clock().now() - trk.timestamp).nanoseconds/10**9 < tracker.trk_timeout))
-    return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore']) and (((tracker.get_clock().now() - trk.timestamp).nanoseconds/10**9 < tracker.trk_timeout))
+    # return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore']) and (((tracker.get_clock().now() - trk.timestamp).nanoseconds/10**9 < tracker.trk_timeout))
+    return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore'])
 
 def CreateTracks(tracker, prob_class_det, det_idx_map):
     while tracker.dets:
