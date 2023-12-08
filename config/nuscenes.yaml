@@ -1,9 +1,9 @@
-nuscenes_converter:
-  ros__parameters:
-    sensor_type: 'LinearGaussian'
-    sensor_variance: [.25, .25, .1]
-    dim_states: 6
-    dim_meas: 3
+# nuscenes_converter:
+#   ros__parameters:
+    # sensor_type: 'LinearGaussian'
+    # sensor_variance: [.25, .25, .1]
+    # dim_states: 6
+    # dim_meas: 3
 
 
 tracker:
@@ -19,6 +19,13 @@ tracker:
            'pedestrian',
            'trailer',
            'truck']
+      frame_id: 'map'
+      trk_pub_topic: 'tracks'
+      trk_msg_type: 'Tracks3D'
+      scene_pub_topic: 'tracks_scene'
+      scene_msg_type: 'SceneUpdate'
+      asgn_thresh: 4.0
+      trk_timeout: 1.5
 
     sensors:
 

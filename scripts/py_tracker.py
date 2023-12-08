@@ -15,73 +15,43 @@ from ros_tracking.assignment import ComputeAssignment
 from ros_tracking.track_management import CreateTracks, DeleteTracks
 from ros_tracking.output import PublishTracks, PublishScene
 from ros_tracking.sensors import CreateSensorModels
-
-# Sensor parameters
-# TODO - add to yaml file
-sensors = dict()
-sensors['nuscenes-megvii'] = dict()
-sensors['nuscenes-megvii']['topic'] = "detections"
-sensors['nuscenes-megvii']['msg_type'] = "Detections3D"
-sensors['nuscenes-megvii']['pos_noise'] = [.2, .2, .2]
-
-# Tracker parameters
-# TODO - add to yaml file
-tracker_params = dict()
-tracker_params['frame_id'] = 'map'
-tracker_params['asgn_thresh'] = 4.0
-tracker_params['trk_pub_topic'] = "tracks"
-tracker_params['trk_msg_type'] = 'Tracks3D'
-tracker_params['scene_pub_topic'] = "tracks_scene"
-tracker_params['scene_msg_type'] = 'SceneUpdate'
+from ros_tracking.tracker import ConfigureTracker
 
 # Object parameters
 # TODO - add to yaml file
 
 class Tracker(Node):
-    def __init__(self, sensor_params):
+    def __init__(self):
         super().__init__('tracker')
 
-        # Tracker properties
-        self.frame_id = tracker_params['frame_id']
+        # Configure tracker from .yaml
+        ConfigureTracker(self)
 
         # Generate sensor models from .yaml, initialize empty callback messages
         self.dets_msg = Detections3D()
         CreateSensorModels(self)          
 
-        # TODO - Get tracker parameters from config file
-        self.class_idx_map = dict()
-        self.object_classes =  ['false_detection', 'void_ignore', 'bicycle', 'bus', 'car', 'motorcycle', 'pedestrian', 'trailer', 'truck']
-        for idx, class_name in enumerate(self.object_classes):
-            self.class_idx_map[class_name] = idx
-
-        # Track management
-        # TODO - read this in from a file, OR assign to object parameters
-        self.trk_delete_prob = 0.35
-        self.trk_delete_timeout = 0.75
-        self.trk_delete_missed_det = 2
-
-        # Track and detection objects
+        # Track and detection variables
         self.trk_id_count = 0
         self.dets = []
         self.trks = []
 
-        # Assignment
+        # Assignment variables
         self.cost_matrix = np.empty(0)
         self.det_asgn_idx = [] 
         self.trk_asgn_idx = []
-        self.asgn_thresh = tracker_params['asgn_thresh']
 
         # Create publisher objects and empty messages
         self.trks_msg = Tracks3D()
         self.scene_msg = SceneUpdate()
         self.track_pub = self.create_publisher(
-            eval(tracker_params['trk_msg_type']),
-            tracker_params['trk_pub_topic'],
+            eval(self.trk_msg_type),
+            self.trk_pub_topic,
             10
         )
         self.scene_pub = self.create_publisher(
-            eval(tracker_params['scene_msg_type']),
-            tracker_params['scene_pub_topic'],
+            eval(self.scene_msg_type),
+            self.scene_pub_topic,
             10
         )
 
@@ -136,7 +106,7 @@ def main(args=None):
     rclpy.init(args=args)
 
     # Create tracker object
-    tracker = Tracker(sensors)
+    tracker = Tracker()
 
     rclpy.spin(tracker)
 

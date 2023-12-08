@@ -3,7 +3,6 @@
 
 from tracking_msgs.msg import Track3D, Tracks3D
 from foxglove_msgs.msg import SceneEntity, SceneUpdate, ArrowPrimitive, CubePrimitive, TextPrimitive
-from builtin_interfaces.msg import Duration
 
 def PublishTracks(tracker):
     tracker.trks_msg = Tracks3D()
@@ -88,7 +87,7 @@ def PublishScene(tracker):
         text.pose.position.x = trk.spatial_state.mean()[0]
         text.pose.position.y = trk.spatial_state.mean()[1]
         text.pose.position.z = trk.spatial_state.mean()[2]
-        text.text = tracker.object_classes[trk.class_dist.argmax()] + ' ' + str(round(trk.class_dist(trk.class_dist.argmax()),2)) + '%'
+        text.text = "%s: %.0f %%" % (tracker.object_classes[trk.class_dist.argmax()], trk.class_dist(trk.class_dist.argmax())*100)
         entity_msg.texts.append(text)
 
         # Textprimitive

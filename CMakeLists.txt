@@ -22,9 +22,9 @@ include_directories(include) # needed for include "ros_tracking/tracking_datatyp
 include_directories(${GTSAM_INCLUDE_DIR})
 # include_directories(${EIGEN3_INCLUDE_DIR})
 
-add_executable(ros_tracker src/ros_tracker.cpp)
-ament_target_dependencies(ros_tracker rclcpp foxglove_msgs tracking_msgs GTSAM Eigen3) # GTSAM Eigen3 gtsam
-target_link_libraries(ros_tracker gtsam)
+# add_executable(ros_tracker src/ros_tracker.cpp)
+# ament_target_dependencies(ros_tracker rclcpp foxglove_msgs tracking_msgs GTSAM Eigen3) # GTSAM Eigen3 gtsam
+# target_link_libraries(ros_tracker gtsam)
 
 add_executable(det_converter src/det_converter.cpp)
 ament_target_dependencies(det_converter rclcpp foxglove_msgs tracking_msgs)
@@ -37,7 +37,7 @@ ament_target_dependencies(depthai_converter rclcpp foxglove_msgs vision_msgs)
 
 # Install CPP
 install(TARGETS 
-  ros_tracker
+  # ros_tracker
   det_converter
   depthai_converter
   DESTINATION lib/${PROJECT_NAME}
