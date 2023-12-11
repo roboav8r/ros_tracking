@@ -1,5 +1,6 @@
 # import tf2_ros
 # import geometry_msgs
+import numpy as np
 
 from tracking_msgs.msg import Track3D, Tracks3D
 from foxglove_msgs.msg import SceneEntity, SceneUpdate, ArrowPrimitive, CubePrimitive, TextPrimitive
@@ -57,26 +58,47 @@ def PublishScene(tracker):
         entity_msg.frame_locked = True
         entity_msg.lifetime.nanosec = 500000000
 
-        # Add spatial information to message
-        # vel_quat = Quaternion(trk.spatial_state.mean()[3],trk.spatial_state.mean()[4],trk.spatial_state.mean()[5],0)
-        # vel_mag = vel_quat.length()
-        # vel_quat.normalize()
-        # vel_arrow = ArrowPrimitive()
-        # vel_arrow.pose.position = trk.spatial_state.mean()
-        # vel_arrow.pose.orientation = geometry_msgs.msg.Quaternion(vel_quat)
-        # vel_arrow.shaft_length = vel_mag
-        # entity_msg.arrows.append(vel_arrow)
-
         # TODO - add covariances and object size/bbox
         cube = CubePrimitive()
         cube.pose.position.x = trk.spatial_state.mean()[0]
         cube.pose.position.y = trk.spatial_state.mean()[1]
         cube.pose.position.z = trk.spatial_state.mean()[2]
-        cube.size.x = 0.25
-        cube.size.y = 0.25
-        cube.size.z = 0.25
-        cube.color.a = 1.0
+
+        # TODO make helper function for rpy->quat
+        cr = np.cos(0.5*trk.spatial_state.mean()[6])
+        sr = np.sin(0.5*trk.spatial_state.mean()[6])
+        cp = np.cos(0.5*trk.spatial_state.mean()[7])
+        sp = np.sin(0.5*trk.spatial_state.mean()[7])
+        cy = np.cos(0.5*trk.spatial_state.mean()[8])
+        sy = np.sin(0.5*trk.spatial_state.mean()[8])
+
+        # trk.orientation = gtsam.Rot3(cr*cp*cy + sr*sp*sy,
+        #                               sr*cp*cy - cr*sp*sy,
+        #                               cr*sp*cy + sr*cp*sy,
+        #                               cr*cp*sy - sr*sp*cy)
+        cube.pose.orientation.w = cr*cp*cy + sr*sp*sy
+        cube.pose.orientation.x = sr*cp*cy - cr*sp*sy
+        cube.pose.orientation.y = cr*sp*cy + sr*cp*sy
+        cube.pose.orientation.z = cr*cp*sy - sr*sp*cy
+        cube.size.x = trk.spatial_state.mean()[12]
+        cube.size.y = trk.spatial_state.mean()[13]
+        cube.size.z = trk.spatial_state.mean()[14]
+        cube.color.a = 0.1
         entity_msg.cubes.append(cube)
+
+        # Add velocity information to message
+        # vel_quat = Quaternion(trk.spatial_state.mean()[3],trk.spatial_state.mean()[4],trk.spatial_state.mean()[5],0)
+        # vel_mag = vel_quat.length()
+        # vel_quat.normalize()
+        vel_arrow_x = ArrowPrimitive()
+        vel_arrow_x.pose = cube.pose
+        vel_arrow_x.shaft_length = trk.spatial_state.mean()[3]
+        vel_arrow_x.shaft_diameter = .1
+        vel_arrow_x.head_length = .2
+        vel_arrow_x.shaft_diameter = .1
+        vel_arrow_x.color.a = 0.5
+        entity_msg.arrows.append(vel_arrow_x)
+
 
         # TODO - Add semantic information to message
         text = TextPrimitive()
