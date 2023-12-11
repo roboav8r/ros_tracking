@@ -25,7 +25,7 @@ def PublishTracks(tracker):
         trk_msg.twist.twist.linear.x = trk.spatial_state.mean()[3]
         trk_msg.twist.twist.linear.y = trk.spatial_state.mean()[4]
         trk_msg.twist.twist.linear.z = trk.spatial_state.mean()[5]
-
+       
         # TODO - add covariances and object size/bbox
         # trk_msg.pose.covariance =        
         # trk_msg.twist.covariance =

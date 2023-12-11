@@ -92,7 +92,6 @@ class Tracker(Node):
         DeleteTracks(self)
         self.get_logger().info("DELETE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 
-
         # CREATE tracks from unmatched detections, as appropriate
         CreateTracks(self, prob_class_det, det_idx_map)
         self.get_logger().info("CREATE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
