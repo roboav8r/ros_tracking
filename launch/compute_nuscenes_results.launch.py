@@ -22,7 +22,7 @@ def generate_launch_description():
             "ros2",
             "bag",
             "play",
-            "/home/jd/nuscenes2mcap/output/NuScenes-v1.0-mini-scene-0061-megvii/NuScenes-v1.0-mini-scene-0061-megvii_0.mcap",
+            "/home/jd/nuscenes2mcap/mcap/NuScenes-v1.0-mini-scene-0061-megvii/NuScenes-v1.0-mini-scene-0061-megvii_0.mcap",
         ],
         output="screen",
     )
@@ -37,16 +37,25 @@ def generate_launch_description():
     )
     ld.add_action(det_node)
 
-    # Tracker node
-    trk_node = Node(
+    # Manager node
+    comp_node = Node(
         package='ros_tracking',
-        executable='py_tracker.py',
-        name='tracker',
-        output='screen',
-        remappings=[('/detections','/converted_detections')],
+        executable='compute_nuscenes_results.py',
+        name='compute_nuscenes_node',
         parameters=[config]
     )
-    ld.add_action(trk_node)
+    ld.add_action(comp_node)
+
+    # Tracker node
+    # trk_node = Node(
+    #     package='ros_tracking',
+    #     executable='py_tracker.py',
+    #     name='tracker',
+    #     output='screen',
+    #     remappings=[('/detections','/converted_detections')],
+    #     parameters=[config]
+    # )
+    # ld.add_action(trk_node)
 
     # Foxglove bridge for visualization
     bridge = IncludeLaunchDescription(

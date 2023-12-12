@@ -5,6 +5,12 @@
     # dim_states: 6
     # dim_meas: 3
 
+compute_nuscenes_node:
+  ros__parameters:
+    nuscenes_dir: '/home/jd/nuScenes'
+    mcap_dir: '/home/jd/nuscenes2mcap/mcap'
+    dataset_name: 'v1.0-mini'
+    lidar_detector: 'megvii'
 
 tracker:
   ros__parameters:
