@@ -4,6 +4,7 @@ import numpy as np
 from rclpy.time import Time
 
 from tracking_msgs.msg import Tracks3D, Track3D, Detections3D, Detection3D
+from diagnostic_msgs.msg import KeyValue
 
 # Special data types to take ROS msg information and format for graph usage
 class GraphDet():
@@ -21,6 +22,7 @@ class GraphDet():
         # Semantic Properties
         # TODO - GTSAM distribution
         # self.class_id 
+        self.metadata = det_msg.metadata
         self.class_string = det_msg.class_string
         # self.class_conf = det_msg.class_confidence
         # self.attribute = det_msg.attribute
@@ -34,6 +36,7 @@ class GraphTrack():
         self.time_created = graph_det.timestamp
         self.time_updated = graph_det.timestamp
         self.dt = 0.
+        self.metadata = graph_det.metadata
 
         # Get semantic parameters
         self.class_dist = gtsam.DiscreteDistribution(prob_class_det.likelihood(det_idx_map[graph_det.class_string]))

@@ -6,6 +6,7 @@
 #include "tracking_msgs/msg/detection3_d.hpp"
 #include "foxglove_msgs/msg/scene_update.hpp"
 #include "foxglove_msgs/msg/scene_entity.hpp"
+#include "diagnostic_msgs/msg/key_value.hpp"
 
 using std::placeholders::_1;
 
@@ -48,6 +49,19 @@ class DetConverter : public rclcpp::Node
               this->det_msg_.attribute = it->metadata[2].value;
               this->det_msg_.bbox.center = it->cubes[0].pose;
               this->det_msg_.bbox.size = it->cubes[0].size;
+
+              diagnostic_msgs::msg::KeyValue kv;
+              kv.key = it->metadata[3].key;
+              kv.value = it->metadata[3].value;
+              this->det_msg_.metadata.emplace_back(kv);
+
+              // for (auto metadata_it = it->metadata.begin();  metadata_it != it->metadata.end(); metadata_it++ ) 
+              // {
+              //   diagnostic_msgs::msg::KeyValue kv;
+              //   kv.key = (std::string)metadata_it->key;
+              //   kv.value = (std::string)metadata_it->value;
+              //   this->det_msg_.metadata.emplace_back(kv);
+              // }
 
               // Add detection to Detections3d
               this->dets_msg_.detections.emplace_back(det_msg_);

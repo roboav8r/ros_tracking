@@ -13,7 +13,7 @@ compute_nuscenes_node:
     dataset_name: 'v1.0-mini'
     split_name: 'val'
     lidar_detector: 'megvii'
-    track_topic: 'tracks'
+    track_topic: 'tracks_scene'
 
 tracker:
   ros__parameters:
@@ -32,11 +32,12 @@ tracker:
       asgn_thresh: 4.0
       trk_timeout: 1.5
       publishers:
-        names: ['track_pub', 'scene_pub']
-        track_pub: # Publisher name
-          pub_topic: 'tracks'
-          msg_type: 'Tracks3D'
-          routine: 'PublishTracks'
+        # names: ['track_pub', 'scene_pub']
+        names: ['scene_pub']
+        # track_pub: # Publisher name
+        #   pub_topic: 'tracks'
+        #   msg_type: 'Tracks3D'
+        #   routine: 'PublishTracks'
         scene_pub: # Publisher name
           pub_topic: 'tracks_scene'
           msg_type: 'SceneUpdate'

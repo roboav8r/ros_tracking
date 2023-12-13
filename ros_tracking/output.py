@@ -3,7 +3,7 @@
 import numpy as np
 
 from tracking_msgs.msg import Track3D, Tracks3D
-from foxglove_msgs.msg import SceneEntity, SceneUpdate, ArrowPrimitive, CubePrimitive, TextPrimitive
+from foxglove_msgs.msg import SceneEntity, SceneUpdate, ArrowPrimitive, CubePrimitive, TextPrimitive, KeyValuePair
 
 def PublishTracks(tracker, pub_name):
     tracker.trks_msg = Tracks3D()
@@ -112,8 +112,28 @@ def PublishScene(tracker, pub_name):
         text.text = "%s-%.0f: %.0f %%" % (tracker.object_classes[trk.class_dist.argmax()], trk.trk_id, trk.class_dist(trk.class_dist.argmax())*100)
         entity_msg.texts.append(text)
 
-        # Textprimitive
-        # metadata
+        # Add metadata
+        name_md = KeyValuePair()
+        name_md.key = 'class_name'
+        name_md.value = tracker.object_classes[trk.class_dist.argmax()]
+        entity_msg.metadata.append(name_md)
+
+        score_md = KeyValuePair()
+        score_md.key = 'class_score'
+        score_md.value = str(trk.class_dist(trk.class_dist.argmax()))
+        entity_msg.metadata.append(score_md)
+
+        att_md = KeyValuePair()
+        att_md.key = 'attribute'
+        att_md.value = '' # TODO add attribute
+        entity_msg.metadata.append(att_md)
+
+        sample_md = KeyValuePair()
+        sample_md.key = trk.metadata[0].key
+        sample_md.value = trk.metadata[0].value
+        entity_msg.metadata.append(sample_md)
+
+
         tracker.scene_msg.entities.append(entity_msg)
     
     # Publish scene message
