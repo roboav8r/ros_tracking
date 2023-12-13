@@ -5,7 +5,7 @@ import numpy as np
 from tracking_msgs.msg import Track3D, Tracks3D
 from foxglove_msgs.msg import SceneEntity, SceneUpdate, ArrowPrimitive, CubePrimitive, TextPrimitive
 
-def PublishTracks(tracker):
+def PublishTracks(tracker, pub_name):
     tracker.trks_msg = Tracks3D()
     tracker.trks_msg.header.frame_id = tracker.frame_id
     tracker.trks_msg.header.stamp = tracker.dets_msg.header.stamp
@@ -41,9 +41,9 @@ def PublishTracks(tracker):
         tracker.trks_msg.tracks.append(trk_msg)
 
     # Publish populated message
-    tracker.track_pub.publish(tracker.trks_msg)
+    exec('tracker.%s.publish(tracker.trks_msg)' % pub_name)
 
-def PublishScene(tracker):
+def PublishScene(tracker, pub_name):
     # Create scene message
     tracker.scene_msg = SceneUpdate()
 
@@ -117,5 +117,4 @@ def PublishScene(tracker):
         tracker.scene_msg.entities.append(entity_msg)
     
     # Publish scene message
-    tracker.scene_pub.publish(tracker.scene_msg)
-    
+    exec('tracker.%s.publish(tracker.scene_msg)' % pub_name)

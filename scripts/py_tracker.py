@@ -7,6 +7,7 @@ import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
+from std_srvs.srv import Empty
 from foxglove_msgs.msg import SceneUpdate, SceneEntity
 from tracking_msgs.msg import Tracks3D, Track3D, Detections3D, Detection3D
 
@@ -44,16 +45,22 @@ class Tracker(Node):
         # Create publisher objects and empty messages
         self.trks_msg = Tracks3D()
         self.scene_msg = SceneUpdate()
-        self.track_pub = self.create_publisher(
-            eval(self.trk_msg_type),
-            self.trk_pub_topic,
-            10
-        )
-        self.scene_pub = self.create_publisher(
-            eval(self.scene_msg_type),
-            self.scene_pub_topic,
-            10
-        )
+
+        # Declare services
+        self.reset_srv = self.create_service(Empty, 'reset_tracker', self.reset_tracker)
+
+    def reset_tracker(self,req, resp):
+        self.get_logger().info("Resetting tracker")
+
+        # Clear track, detection, and assignment variables
+        self.dets = []
+        self.trks = []
+
+        self.cost_matrix = np.empty(0)
+        self.det_asgn_idx = [] 
+        self.trk_asgn_idx = []       
+
+        return resp
 
     def propagate_tracks(self):
         for trk in self.trks:
@@ -97,8 +104,12 @@ class Tracker(Node):
         self.get_logger().info("CREATE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 
         # OUTPUT tracker results
-        PublishTracks(self)
-        PublishScene(self)
+        for pub_name in self.pubs:
+            print(pub_name)
+            print(self.pubs[pub_name])
+            exec('%s(self,\'%s\')' % (self.pubs[pub_name]['routine'],pub_name))
+        # PublishTracks(self)
+        # PublishScene(self)
 
 
 def main(args=None):

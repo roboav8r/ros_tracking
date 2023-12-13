@@ -7,10 +7,13 @@
 
 compute_nuscenes_node:
   ros__parameters:
-    nuscenes_dir: '/home/jd/nuScenes'
+    nuscenes_dir: '/home/jd/nuScenes/data'
     mcap_dir: '/home/jd/nuscenes2mcap/mcap'
+    results_dir: '/home/jd/tracking_ws/src/ros_tracking/results'
     dataset_name: 'v1.0-mini'
+    split_name: 'val'
     lidar_detector: 'megvii'
+    track_topic: 'tracks'
 
 tracker:
   ros__parameters:
@@ -26,12 +29,19 @@ tracker:
            'trailer',
            'truck']
       frame_id: 'map'
-      trk_pub_topic: 'tracks'
-      trk_msg_type: 'Tracks3D'
-      scene_pub_topic: 'tracks_scene'
-      scene_msg_type: 'SceneUpdate'
       asgn_thresh: 4.0
       trk_timeout: 1.5
+      publishers:
+        names: ['track_pub', 'scene_pub']
+        track_pub: # Publisher name
+          pub_topic: 'tracks'
+          msg_type: 'Tracks3D'
+          routine: 'PublishTracks'
+        scene_pub: # Publisher name
+          pub_topic: 'tracks_scene'
+          msg_type: 'SceneUpdate'
+          routine: 'PublishScene'
+
 
     sensors:
 

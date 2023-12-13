@@ -3,6 +3,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import ExecuteProcess, IncludeLaunchDescription
 from launch_ros.actions import Node
+from tracetools_launch.action import Trace
 from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 # TODO - programmatically find bag path
 
@@ -16,17 +17,22 @@ def generate_launch_description():
         'nuscenes.yaml'
         )
     
+    # trace = Trace(
+    #     session_name="nuscenes_tracing",
+    # )
+    # ld.add_action(trace)
+
     # Play bag
-    bag = ExecuteProcess(
-        cmd=[
-            "ros2",
-            "bag",
-            "play",
-            "/home/jd/nuscenes2mcap/mcap/NuScenes-v1.0-mini-scene-0061-megvii/NuScenes-v1.0-mini-scene-0061-megvii_0.mcap",
-        ],
-        output="screen",
-    )
-    ld.add_action(bag)
+    # bag = ExecuteProcess(
+    #     cmd=[
+    #         "ros2",
+    #         "bag",
+    #         "play",
+    #         "/home/jd/nuscenes2mcap/mcap/NuScenes-v1.0-mini-scene-0061-megvii/NuScenes-v1.0-mini-scene-0061-megvii_0.mcap",
+    #     ],
+    #     output="screen",
+    # )
+    # ld.add_action(bag)
 
     # Detection conversion node
     det_node = Node(
@@ -42,20 +48,21 @@ def generate_launch_description():
         package='ros_tracking',
         executable='compute_nuscenes_results.py',
         name='compute_nuscenes_node',
+        output="screen",
         parameters=[config]
     )
     ld.add_action(comp_node)
 
     # Tracker node
-    # trk_node = Node(
-    #     package='ros_tracking',
-    #     executable='py_tracker.py',
-    #     name='tracker',
-    #     output='screen',
-    #     remappings=[('/detections','/converted_detections')],
-    #     parameters=[config]
-    # )
-    # ld.add_action(trk_node)
+    trk_node = Node(
+        package='ros_tracking',
+        executable='py_tracker.py',
+        name='tracker',
+        output='screen',
+        remappings=[('/detections','/converted_detections')],
+        parameters=[config]
+    )
+    ld.add_action(trk_node)
 
     # Foxglove bridge for visualization
     bridge = IncludeLaunchDescription(
