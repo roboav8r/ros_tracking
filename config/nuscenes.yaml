@@ -10,10 +10,11 @@ compute_nuscenes_node:
     nuscenes_dir: '/home/jd/nuScenes/data'
     mcap_dir: '/home/jd/nuscenes2mcap/mcap'
     results_dir: '/home/jd/tracking_ws/src/ros_tracking/results'
-    dataset_name: 'v1.0-mini'
-    split_name: 'val'
+    # dataset_name: 'v1.0-mini'
+    split_name: 'mini_val'
     lidar_detector: 'megvii'
     track_topic: 'tracks_scene'
+    det_topic: '/detections'
 
 tracker:
   ros__parameters:

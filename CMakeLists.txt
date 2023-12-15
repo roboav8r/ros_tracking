@@ -50,6 +50,7 @@ install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION include/${PROJECT_NAME})
 ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/py_tracker.py
+  scripts/nuscenes_to_mcap.py
   scripts/compute_nuscenes_results.py
   DESTINATION lib/${PROJECT_NAME}
 )

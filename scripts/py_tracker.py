@@ -50,7 +50,7 @@ class Tracker(Node):
         self.reset_srv = self.create_service(Empty, 'reset_tracker', self.reset_tracker)
 
     def reset_tracker(self,req, resp):
-        self.get_logger().info("Resetting tracker")
+        # self.get_logger().info("Resetting tracker")
 
         # Clear track, detection, and assignment variables
         self.dets = []
@@ -75,19 +75,19 @@ class Tracker(Node):
         self.dets = []
        
         # POPULATE detections list from detections message
-        self.get_logger().info("DETECT: received %i detections" % (len(self.dets_msg.detections)))
+        # self.get_logger().info("DETECT: received %i detections" % (len(self.dets_msg.detections)))
         for det in self.dets_msg.detections:
             self.dets.append(GraphDet(self.dets_msg,det))
-        self.get_logger().info("DETECT: formatted %i detections \n" % (len(self.dets)))
+        # self.get_logger().info("DETECT: formatted %i detections \n" % (len(self.dets)))
 
         # PROPAGATE existing tracks
         self.propagate_tracks()
 
         # ASSIGN detections to tracks
         ComputeAssignment(self)
-        self.get_logger().info("ASSIGN: cost matrix has shape %lix%li \n" % (self.cost_matrix.shape[0],self.cost_matrix.shape[1]))
-        self.get_logger().info("ASSIGN: det assignment vector has length %li \n" % (len(self.det_asgn_idx)))
-        self.get_logger().info("ASSIGN: trk assignment vector has length %li \n" % (len(self.trk_asgn_idx)))
+        # self.get_logger().info("ASSIGN: cost matrix has shape %lix%li \n" % (self.cost_matrix.shape[0],self.cost_matrix.shape[1]))
+        # self.get_logger().info("ASSIGN: det assignment vector has length %li \n" % (len(self.det_asgn_idx)))
+        # self.get_logger().info("ASSIGN: trk assignment vector has length %li \n" % (len(self.trk_asgn_idx)))
 
         # UPDATE tracks with assigned detections
         self.update_tracks(obs_model, obs_variance, prob_class_det, det_idx_map)
@@ -97,16 +97,16 @@ class Tracker(Node):
             if i not in self.trk_asgn_idx: # If track is unmatched, handle it as a missed detection
                 trk.class_dist = gtsam.DiscreteDistribution(prob_class_det.likelihood(det_idx_map['missed_detection']))
         DeleteTracks(self)
-        self.get_logger().info("DELETE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
+        # self.get_logger().info("DELETE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 
         # CREATE tracks from unmatched detections, as appropriate
         CreateTracks(self, prob_class_det, det_idx_map)
-        self.get_logger().info("CREATE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
+        # self.get_logger().info("CREATE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 
         # OUTPUT tracker results
         for pub_name in self.pubs:
-            print(pub_name)
-            print(self.pubs[pub_name])
+            # print(pub_name)
+            # print(self.pubs[pub_name])
             exec('%s(self,\'%s\')' % (self.pubs[pub_name]['routine'],pub_name))
         # PublishTracks(self)
         # PublishScene(self)
