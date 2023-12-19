@@ -6,6 +6,8 @@ from rclpy.time import Time
 from tracking_msgs.msg import Tracks3D, Track3D, Detections3D, Detection3D
 from diagnostic_msgs.msg import KeyValue
 
+from ros_tracking.sensors import ComputeMatrixSpec
+
 # Special data types to take ROS msg information and format for graph usage
 class GraphDet():
     def __init__(self, dets_msg, det_msg):
@@ -29,7 +31,7 @@ class GraphDet():
 
 
 class GraphTrack():
-    def __init__(self, id, graph_det, prob_class_label, prob_exists_det, det_idx_map):
+    def __init__(self, id, graph_det, prob_class_label, det_params):
         # Admin
         self.trk_id = id
         self.timestamp = graph_det.timestamp
@@ -37,13 +39,19 @@ class GraphTrack():
         self.time_updated = graph_det.timestamp
         self.dt = 0.
         self.metadata = graph_det.metadata
-        # self.n_matches = 1
-        # self.n_missed = 0
 
         # Get semantic parameters
-        self.class_dist = gtsam.DiscreteDistribution(prob_class_label.likelihood(det_idx_map[graph_det.class_string]))
+        self.class_dist = gtsam.DiscreteDistribution(prob_class_label.likelihood(det_params[graph_det.class_string]['idx']))
         self.class_conf = graph_det.class_conf
-        self.track_conf = gtsam.DiscreteDistribution(prob_exists_det.likelihood(0))
+
+        # Compute existence probability
+        p_exists_det_matrix = np.array([[det_params['p_false_pos'][det_params[graph_det.class_string]['idx']], 1 - det_params['p_false_pos'][det_params[graph_det.class_string]['idx']]],
+                                     [1 - det_params['p_missed_det'][self.class_dist.argmax()], det_params['p_missed_det'][self.class_dist.argmax()]]])
+        exists_det_spec = ComputeMatrixSpec(p_exists_det_matrix)
+        self.p_exists_det = gtsam.DiscreteConditional((det_params['exist_sym'],2),[(det_params['det_sym'],2)],exists_det_spec)
+
+        # self.track_conf = gtsam.DiscreteDistribution(prob_exists_det.likelihood(0))
+        self.track_conf = gtsam.DiscreteDistribution(self.p_exists_det.likelihood(0))
 
         # Initialize spatial state
         # Linear
@@ -103,7 +111,7 @@ class GraphTrack():
         self.compute_proc_noise()
         self.spatial_state = self.kf.predict(self.spatial_state,self.proc_model,np.zeros((15,15)),np.zeros((15,1)),self.proc_noise)
 
-    def update(self, det, obs_model, obs_noise, prob_class_label, prob_exists_det, det_idx_map):
+    def update(self, det, obs_model, obs_noise, prob_class_label, det_params):
         self.spatial_state = self.kf.update(self.spatial_state, obs_model, np.vstack((det.pos, det.size)), obs_noise)
         
         # # TODO make helper function for rpy->quat
@@ -123,8 +131,21 @@ class GraphTrack():
         self.n_missed = 0
         self.metadata = det.metadata
         # self.n_matches += 1
-        self.class_dist = gtsam.DiscreteDistribution(prob_class_label.likelihood(det_idx_map[det.class_string])*self.class_dist)
-        self.track_conf = gtsam.DiscreteDistribution(prob_exists_det.likelihood(0)*self.track_conf)
+        self.class_dist = gtsam.DiscreteDistribution(prob_class_label.likelihood(det_params[det.class_string]['idx'])*self.class_dist)
+
+
+        # Compute existence probability
+        p_exists_det_matrix = np.array([[det_params['p_false_pos'][det_params[det.class_string]['idx']], 1 - det_params['p_false_pos'][det_params[det.class_string]['idx']]],
+                                     [1 - det_params['p_missed_det'][self.class_dist.argmax()], det_params['p_missed_det'][self.class_dist.argmax()]]])
+        exists_det_spec = ComputeMatrixSpec(p_exists_det_matrix)
+        self.p_exists_det = gtsam.DiscreteConditional((det_params['exist_sym'],2),[(det_params['det_sym'],2)],exists_det_spec)
+
+        # self.track_conf = gtsam.DiscreteDistribution(prob_exists_det.likelihood(0))
+        self.track_conf = gtsam.DiscreteDistribution(self.p_exists_det.likelihood(0)*self.track_conf)
+
+
+
+        # self.track_conf = gtsam.DiscreteDistribution(prob_exists_det.likelihood(0)*self.track_conf)
         # if det.size is not [0,0,0]: # Only update box size if it's available
         #     self.obj_depth, self.obj_width, self.obj_height = det.obj_depth, det.obj_width, det.obj_height
         # self.transform = det.trk_transform

@@ -23,21 +23,29 @@ def CreateSensorModel(tracker, sensor_params, class_sym, label_sym, exist_sym, d
 
     # Create semantic sensor model
     prob_class_label = np.array(sensor_params['semantic_sensor_model']).reshape((sensor_params['dim_classes'],sensor_params['dim_detections']))
-    prob_exists_det = np.array([[sensor_params['p_false_pos'], 1 - sensor_params['p_false_pos']],[1 - sensor_params['p_missed_det'], sensor_params['p_missed_det']]])
+    # prob_exists_det = np.array([[sensor_params['p_false_pos'], 1 - sensor_params['p_false_pos']],[1 - sensor_params['p_missed_det'], sensor_params['p_missed_det']]])
     class_label_spec = ComputeMatrixSpec(prob_class_label)
-    exists_det_spec = ComputeMatrixSpec(prob_exists_det)
+    # exists_det_spec = ComputeMatrixSpec(prob_exists_det)
 
     p_class_label = gtsam.DiscreteConditional((label_sym,sensor_params['dim_detections']),[(class_sym,sensor_params['dim_classes'])],class_label_spec)
-    p_exists_det = gtsam.DiscreteConditional((exist_sym,2),[(det_sym,2)],exists_det_spec)
+    # p_exists_det = gtsam.DiscreteConditional((exist_sym,2),[(det_sym,2)],exists_det_spec)
 
-    det_idx_map = dict()
+    det_params = dict()
+    det_params['p_missed_det'] = sensor_params['p_missed_det_list']
+    det_params['p_false_pos'] = sensor_params['p_false_pos_list']
+    det_params['class_sym'] = class_sym
+    det_params['label_sym'] = label_sym
+    det_params['exist_sym'] = exist_sym
+    det_params['det_sym'] = det_sym
+    
     for idx, class_name in enumerate(sensor_params['detection_classes']):
-        det_idx_map[class_name] = idx
+        det_params[class_name] = dict()
+        det_params[class_name]['idx'] = idx
 
     # TODO - make unique subscription name if multiple sensors given
     tracker.subscription = tracker.create_subscription(eval(sensor_params['msg_type']),
             sensor_params['topic'],
-            lambda msg: tracker.det_callback(msg, obs_model, obs_var, p_class_label, p_exists_det, det_idx_map), 
+            lambda msg: tracker.det_callback(msg, obs_model, obs_var, p_class_label, det_params), 
             10
     )
 
@@ -67,9 +75,12 @@ def CreateSensorModels(tracker):
         tracker.declare_parameter('sensors.' + sensor + '.dim_detections')
         tracker.declare_parameter('sensors.' + sensor + '.detection_classes')
         tracker.declare_parameter('sensors.' + sensor + '.semantic_sensor_model')
-        tracker.declare_parameter('sensors.' + sensor + '.p_missed_det')
-        tracker.declare_parameter('sensors.' + sensor + '.p_false_pos')
-        
+        # tracker.declare_parameter('sensors.' + sensor + '.p_missed_det')
+        # tracker.declare_parameter('sensors.' + sensor + '.p_false_pos')
+        tracker.declare_parameter('sensors.' + sensor + '.p_missed_det_list')
+        tracker.declare_parameter('sensors.' + sensor + '.p_false_pos_list')
+
+
         # Form parameter dictionary for sensor
         sensor_params = dict()
         sensor_params['name'] = sensor
@@ -83,8 +94,10 @@ def CreateSensorModels(tracker):
         sensor_params['dim_detections'] = tracker.get_parameter('sensors.' + sensor + '.dim_detections').get_parameter_value().integer_value
         sensor_params['detection_classes'] = tracker.get_parameter('sensors.' + sensor + '.detection_classes').get_parameter_value().string_array_value
         sensor_params['semantic_sensor_model'] = tracker.get_parameter('sensors.' + sensor + '.semantic_sensor_model').get_parameter_value().double_array_value
-        sensor_params['p_missed_det'] = tracker.get_parameter('sensors.' + sensor + '.p_missed_det').get_parameter_value().double_value
-        sensor_params['p_false_pos'] = tracker.get_parameter('sensors.' + sensor + '.p_false_pos').get_parameter_value().double_value
+        # sensor_params['p_missed_det'] = tracker.get_parameter('sensors.' + sensor + '.p_missed_det').get_parameter_value().double_value
+        # sensor_params['p_false_pos'] = tracker.get_parameter('sensors.' + sensor + '.p_false_pos').get_parameter_value().double_value
+        sensor_params['p_missed_det_list'] = tracker.get_parameter('sensors.' + sensor + '.p_missed_det_list').get_parameter_value().double_array_value
+        sensor_params['p_false_pos_list'] = tracker.get_parameter('sensors.' + sensor + '.p_false_pos_list').get_parameter_value().double_array_value
 
         # Create sensor object
         CreateSensorModel(tracker, sensor_params, class_sym, label_sym, exist_sym, det_sym)

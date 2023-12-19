@@ -48,12 +48,6 @@ def PublishScene(tracker, pub_name):
     tracker.scene_msg = SceneUpdate()
 
     for trk in tracker.trks:
-        
-        # if trk.track_conf(1) < tracker.pub_thresh: # not confident enough to publish
-        #     continue
-
-        # if tracker.object_classes[trk.class_dist.argmax()] == 'void_ignore':
-        #     continue
 
         # Create track message
         entity_msg = SceneEntity()

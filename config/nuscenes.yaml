@@ -44,7 +44,7 @@ tracker:
           routine: 'PublishScene'
 
       del_thresh: 0.7
-      pub_thresh: 0.8
+      pub_thresh: 0.6
 
     sensors:
 
@@ -101,5 +101,13 @@ tracker:
                         0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.833333, 0.016667, # trailer
                         0.011429, 0.000000, 0.009524, 0.196190, 0.011429, 0.000000, 0.007619, 0.000000, 0.005714, 0.560000] # truck
 
-        p_missed_det: 0.25
-        p_false_pos: .55
+        # p_missed_det: 0.30
+        # p_false_pos: .60
+
+
+        #                 void_ignore / bicycle / bus / car / motorcycle / pedestrian / trailer / truck
+        p_missed_det_list: [.3, .3, .3, .3, .3, .3, .3, .3]
+
+
+        #                 barrier / bicycle / bus / car / construction_vehicle / motorcycle / pedestrian / traffic_cone / trailer / truck
+        p_false_pos_list: [.6, .6, .6, .6, .6, .6, .6, .6, .6, .6]

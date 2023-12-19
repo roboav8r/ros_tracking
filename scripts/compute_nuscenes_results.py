@@ -162,6 +162,9 @@ class ComputeNuscenesResults(Node):
             if (entity.metadata[0].value) in ['void_ignore']:
                 continue
 
+            if (float(entity.metadata[4].value) < 0.5):
+                continue
+
             if (entity.metadata[3].value) not in self.results_dict["results"].keys():
                 self.results_dict["results"][entity.metadata[3].value] = []
 
