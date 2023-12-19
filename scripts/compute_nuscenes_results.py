@@ -57,6 +57,8 @@ class ComputeNuscenesResults(Node):
 
         # Member variables
         times = []
+        self.msg_count=0
+        self.debug_dict = dict()
 
         # Create nuscenes dataset object
         # nusc = NuScenes(version=self.dataset_name, dataroot=str(self.nuscenes_dir), verbose=True)
@@ -119,25 +121,26 @@ class ComputeNuscenesResults(Node):
                     times.append(toc-tic)
                     self.tracker_callback(trk_msg)
 
-
-            # Start mcap playback of detection data
-            # bag_play_str = "ros2 bag play %s/%s%s/%s%s_0.mcap" % (self.mcap_dir, scene, self.lidar_det_string, scene, self.lidar_det_string)
-            # returned_val = os.system(bag_play_str)
-
-            # Wait for last message to be completed, then move to next scene
-            # TODO
-            # self.get_logger().info("Bag play command returned %s" % (returned_val))
-            # if returned_val:
-            # os.system(b'\x03') # ctrl-c to stop recording
-
         # Save results
         with open(self.results_dir + "/results.json", "w") as outfile:
             json.dump(self.results_dict, outfile, indent=2)
 
+        with open(self.results_dir + "/debug.json", "w") as outfile:
+            json.dump(self.debug_dict, outfile, indent=2)
+
+        
+
         self.get_logger().info("Times: %s" % times)
 
     def tracker_callback(self, msg):
-        self.get_logger().info("Tracker msg received")
+        self.msg_count+=1
+        self.get_logger().info("Tracker msg #%d received" % self.msg_count)
+        self.get_logger().info("CALLBACK: has %i tracks\n" % (len(msg.entities)))
+
+
+        self.debug_dict[self.msg_count] = dict()
+        self.debug_dict[self.msg_count]['sample_token'] = msg.entities[0].metadata[3].value
+        self.debug_dict[self.msg_count]['trk_ids'] = []
 
         # Populate dictionary entry
         for entity in msg.entities:
@@ -155,6 +158,9 @@ class ComputeNuscenesResults(Node):
         #                                     We average over frame level scores to compute the track level score.
         #                                     The score is used to determine positive and negative tracks via thresholding.
         # }
+            
+            if (entity.metadata[0].value) in ['void_ignore']:
+                continue
 
             if (entity.metadata[3].value) not in self.results_dict["results"].keys():
                 self.results_dict["results"][entity.metadata[3].value] = []
@@ -162,13 +168,15 @@ class ComputeNuscenesResults(Node):
             track_dict = dict()
             track_dict["sample_token"] = entity.metadata[3].value
             track_dict["translation"] = [entity.cubes[0].pose.position.x, entity.cubes[0].pose.position.y, entity.cubes[0].pose.position.z]
-            track_dict["size"] = [entity.cubes[0].size.x, entity.cubes[0].size.y, entity.cubes[0].size.z] 
+            track_dict["size"] = [entity.cubes[0].size.y, entity.cubes[0].size.x, entity.cubes[0].size.z] 
             track_dict["rotation"] = [entity.cubes[0].pose.orientation.w, entity.cubes[0].pose.orientation.x, entity.cubes[0].pose.orientation.y, entity.cubes[0].pose.orientation.z]
             track_dict["velocity"] = [0., 0.]
             track_dict["attribute_name"] = entity.metadata[2].value
-            track_dict["tracking_score"] = float(entity.metadata[1].value) #track.class_confidence
+            track_dict["tracking_score"] = float(entity.metadata[4].value) #track existence confidence
             track_dict["tracking_name"] = entity.metadata[0].value #track.class_string
             track_dict["tracking_id"] = int(entity.id) #track.track_id
+
+            self.debug_dict[self.msg_count]['trk_ids'].append(int(entity.id))
             self.results_dict["results"][entity.metadata[3].value].append(track_dict)
 
 

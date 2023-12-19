@@ -14,7 +14,9 @@ def ConfigureTracker(tracker):
     tracker.declare_parameter('tracker.frame_id', rclpy.Parameter.Type.STRING )
       
     tracker.declare_parameter('tracker.asgn_thresh', rclpy.Parameter.Type.DOUBLE )
-    tracker.declare_parameter('tracker.trk_timeout', rclpy.Parameter.Type.DOUBLE )
+    # tracker.declare_parameter('tracker.trk_timeout', rclpy.Parameter.Type.DOUBLE )
+    tracker.declare_parameter('tracker.del_thresh', rclpy.Parameter.Type.DOUBLE )
+    tracker.declare_parameter('tracker.pub_thresh', rclpy.Parameter.Type.DOUBLE )
 
     tracker.declare_parameter('tracker.publishers.names', rclpy.Parameter.Type.STRING_ARRAY)
     
@@ -24,7 +26,9 @@ def ConfigureTracker(tracker):
     tracker.frame_id = tracker.get_parameter('tracker.frame_id').get_parameter_value().string_value
 
     tracker.asgn_thresh = tracker.get_parameter('tracker.asgn_thresh').get_parameter_value().double_value
-    tracker.trk_timeout = tracker.get_parameter('tracker.trk_timeout').get_parameter_value().double_value
+    # tracker.trk_timeout = tracker.get_parameter('tracker.trk_timeout').get_parameter_value().double_value
+    tracker.del_thresh = tracker.get_parameter('tracker.del_thresh').get_parameter_value().double_value
+    tracker.pub_thresh = tracker.get_parameter('tracker.pub_thresh').get_parameter_value().double_value
 
     tracker.class_idx_map = dict()
     for idx, class_name in enumerate(tracker.object_classes):

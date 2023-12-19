@@ -48,6 +48,13 @@ def PublishScene(tracker, pub_name):
     tracker.scene_msg = SceneUpdate()
 
     for trk in tracker.trks:
+        
+        # if trk.track_conf(1) < tracker.pub_thresh: # not confident enough to publish
+        #     continue
+
+        # if tracker.object_classes[trk.class_dist.argmax()] == 'void_ignore':
+        #     continue
+
         # Create track message
         entity_msg = SceneEntity()
 
@@ -120,7 +127,7 @@ def PublishScene(tracker, pub_name):
 
         score_md = KeyValuePair()
         score_md.key = 'class_score'
-        score_md.value = str(trk.class_dist(trk.class_dist.argmax()))
+        score_md.value = str(trk.class_dist(trk.class_dist.argmax())*trk.class_conf) # TODO - this is temporary... right?
         entity_msg.metadata.append(score_md)
 
         att_md = KeyValuePair()
@@ -133,6 +140,10 @@ def PublishScene(tracker, pub_name):
         sample_md.value = trk.metadata[0].value
         entity_msg.metadata.append(sample_md)
 
+        trk_md = KeyValuePair()
+        trk_md.key = 'track_score'
+        trk_md.value = str(trk.track_conf(1))
+        entity_msg.metadata.append(trk_md)
 
         tracker.scene_msg.entities.append(entity_msg)
     

@@ -66,16 +66,17 @@ class Tracker(Node):
         for trk in self.trks:
             trk.propagate(self.dets_msg.header.stamp)
 
-    def update_tracks(self, obs_mdl, obs_var, prob_class_det, det_idx_map):
+    def update_tracks(self, obs_mdl, obs_var, prob_class_label, prob_exists_det, det_idx_map):
         for det_idx, trk_idx in zip(self.det_asgn_idx, self.trk_asgn_idx):
-            self.trks[trk_idx].update(self.dets[det_idx], obs_mdl, obs_var, prob_class_det, det_idx_map)
+            self.trks[trk_idx].update(self.dets[det_idx], obs_mdl, obs_var, prob_class_label, prob_exists_det, det_idx_map)
 
-    def det_callback(self, det_array_msg, obs_model, obs_variance, prob_class_det, det_idx_map):
+    def det_callback(self, det_array_msg, obs_model, obs_variance, prob_class_label, prob_exists_det, det_idx_map):
         self.dets_msg = det_array_msg
+        metadata = self.dets_msg.detections[0].metadata
         self.dets = []
        
         # POPULATE detections list from detections message
-        # self.get_logger().info("DETECT: received %i detections" % (len(self.dets_msg.detections)))
+        self.get_logger().info("DETECT: received %i detections" % (len(self.dets_msg.detections)))
         for det in self.dets_msg.detections:
             self.dets.append(GraphDet(self.dets_msg,det))
         # self.get_logger().info("DETECT: formatted %i detections \n" % (len(self.dets)))
@@ -85,25 +86,29 @@ class Tracker(Node):
 
         # ASSIGN detections to tracks
         ComputeAssignment(self)
-        # self.get_logger().info("ASSIGN: cost matrix has shape %lix%li \n" % (self.cost_matrix.shape[0],self.cost_matrix.shape[1]))
-        # self.get_logger().info("ASSIGN: det assignment vector has length %li \n" % (len(self.det_asgn_idx)))
-        # self.get_logger().info("ASSIGN: trk assignment vector has length %li \n" % (len(self.trk_asgn_idx)))
+        self.get_logger().info("ASSIGN: cost matrix has shape %lix%li \n" % (self.cost_matrix.shape[0],self.cost_matrix.shape[1]))
+        self.get_logger().info("ASSIGN: det assignment vector has length %li \n" % (len(self.det_asgn_idx)))
+        self.get_logger().info("ASSIGN: trk assignment vector has length %li \n" % (len(self.trk_asgn_idx)))
 
         # UPDATE tracks with assigned detections
-        self.update_tracks(obs_model, obs_variance, prob_class_det, det_idx_map)
+        self.update_tracks(obs_model, obs_variance, prob_class_label, prob_exists_det, det_idx_map)
 
         # UPDATE unmatched tracks (missed detections)
         for i, trk in enumerate(self.trks):
             if i not in self.trk_asgn_idx: # If track is unmatched, handle it as a missed detection
-                trk.class_dist = gtsam.DiscreteDistribution(prob_class_det.likelihood(det_idx_map['missed_detection']))
+                # trk.class_dist = gtsam.DiscreteDistribution(prob_class_label.likelihood(det_idx_map['missed_detection']))
+                trk.track_conf = gtsam.DiscreteDistribution(prob_exists_det.likelihood(1)*trk.track_conf)
+                trk.metadata = metadata
+                # trk.n_missed += 1
         DeleteTracks(self)
         # self.get_logger().info("DELETE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 
         # CREATE tracks from unmatched detections, as appropriate
-        CreateTracks(self, prob_class_det, det_idx_map)
+        CreateTracks(self, prob_class_label, prob_exists_det, det_idx_map)
         # self.get_logger().info("CREATE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 
         # OUTPUT tracker results
+        self.get_logger().info("PUBLISH: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
         for pub_name in self.pubs:
             # print(pub_name)
             # print(self.pubs[pub_name])
