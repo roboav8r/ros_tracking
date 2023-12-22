@@ -13,7 +13,11 @@ find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(foxglove_msgs REQUIRED)
 find_package(vision_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(tracking_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(GTSAM REQUIRED)
@@ -30,7 +34,7 @@ add_executable(det_converter src/det_converter.cpp)
 ament_target_dependencies(det_converter rclcpp foxglove_msgs tracking_msgs)
 
 add_executable(depthai_converter src/depthai_converter.cpp)
-ament_target_dependencies(depthai_converter rclcpp foxglove_msgs vision_msgs)
+ament_target_dependencies(depthai_converter rclcpp vision_msgs geometry_msgs tracking_msgs tf2 tf2_ros tf2_geometry_msgs)
 
 
 # target_compile_features(ros_tracker PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
