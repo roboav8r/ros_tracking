@@ -12,23 +12,22 @@ def ConfigureTracker(tracker):
     tracker.declare_parameter('tracker.dim_objects', rclpy.Parameter.Type.INTEGER)
     tracker.declare_parameter('tracker.object_classes', rclpy.Parameter.Type.STRING_ARRAY)
     tracker.declare_parameter('tracker.frame_id', rclpy.Parameter.Type.STRING )
-      
     tracker.declare_parameter('tracker.asgn_thresh', rclpy.Parameter.Type.DOUBLE )
-    # tracker.declare_parameter('tracker.trk_timeout', rclpy.Parameter.Type.DOUBLE )
     tracker.declare_parameter('tracker.del_thresh', rclpy.Parameter.Type.DOUBLE )
     tracker.declare_parameter('tracker.pub_thresh', rclpy.Parameter.Type.DOUBLE )
-
     tracker.declare_parameter('tracker.publishers.names', rclpy.Parameter.Type.STRING_ARRAY)
+    tracker.declare_parameter('tracker.n_age_max_list', rclpy.Parameter.Type.INTEGER_ARRAY)
+    tracker.declare_parameter('tracker.n_birth_min_list', rclpy.Parameter.Type.INTEGER_ARRAY)
     
     # Read parameters and assign to tracker object
     tracker.dim_objects = tracker.get_parameter('tracker.dim_objects').get_parameter_value().integer_value
     tracker.object_classes = tracker.get_parameter('tracker.object_classes').get_parameter_value().string_array_value
     tracker.frame_id = tracker.get_parameter('tracker.frame_id').get_parameter_value().string_value
-
     tracker.asgn_thresh = tracker.get_parameter('tracker.asgn_thresh').get_parameter_value().double_value
-    # tracker.trk_timeout = tracker.get_parameter('tracker.trk_timeout').get_parameter_value().double_value
     tracker.del_thresh = tracker.get_parameter('tracker.del_thresh').get_parameter_value().double_value
     tracker.pub_thresh = tracker.get_parameter('tracker.pub_thresh').get_parameter_value().double_value
+    tracker.n_age_max_list = tracker.get_parameter('tracker.n_age_max_list').get_parameter_value().integer_array_value
+    tracker.n_birth_min_list= tracker.get_parameter('tracker.n_birth_min_list').get_parameter_value().integer_array_value
 
     tracker.class_idx_map = dict()
     for idx, class_name in enumerate(tracker.object_classes):

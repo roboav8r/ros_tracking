@@ -8,12 +8,12 @@
 compute_nuscenes_node:
   ros__parameters:
     nuscenes_dir: '/home/jd/nuScenes/data'
-    mcap_dir: '/home/jd/nuscenes2mcap/mcap'
+    mcap_dir: '/home/jd/nuScenes/data/mcap'
     results_dir: '/home/jd/tracking_ws/src/ros_tracking/results'
     # dataset_name: 'v1.0-mini'
-    split_name: 'mini_val'
+    split_name: 'val'
     lidar_detector: 'megvii'
-    track_topic: 'tracks_scene'
+    track_topic: 'tracks'
     det_topic: '/detections'
 
 tracker:
@@ -29,22 +29,27 @@ tracker:
            'trailer',
            'truck']
       frame_id: 'map'
-      asgn_thresh: 4.0
+      asgn_thresh: 2.0
       # trk_timeout: 1.5
       publishers:
         # names: ['track_pub', 'scene_pub']
-        names: ['scene_pub']
-        # track_pub: # Publisher name
-        #   pub_topic: 'tracks'
-        #   msg_type: 'Tracks3D'
-        #   routine: 'PublishTracks'
-        scene_pub: # Publisher name
-          pub_topic: 'tracks_scene'
-          msg_type: 'SceneUpdate'
-          routine: 'PublishScene'
+        names: ['track_pub']
+        # names: ['scene_pub']
+        track_pub: # Publisher name
+          pub_topic: 'tracks'
+          msg_type: 'Tracks3D'
+          routine: 'PublishTracks'
+        # scene_pub: # Publisher name
+        #   pub_topic: 'tracks_scene'
+        #   msg_type: 'SceneUpdate'
+        #   routine: 'PublishScene'
 
-      del_thresh: 0.7
-      pub_thresh: 0.6
+      # Track management
+      del_thresh: 0.9
+      pub_thresh: 0.5
+      
+      n_birth_min_list: [1, 2, 1, 1, 3, 1, 2, 1]
+      n_age_max_list: [3, 3, 2, 2, 2, 2, 3, 3]
 
     sensors:
 
@@ -106,8 +111,13 @@ tracker:
 
 
         #                 void_ignore / bicycle / bus / car / motorcycle / pedestrian / trailer / truck
-        p_missed_det_list: [.3, .3, .3, .3, .3, .3, .3, .3]
-
+        p_missed_det_list: [.2, .2, .2, .2, .2, .2, .2, .2]
 
         #                 barrier / bicycle / bus / car / construction_vehicle / motorcycle / pedestrian / traffic_cone / trailer / truck
-        p_false_pos_list: [.6, .6, .6, .6, .6, .6, .6, .6, .6, .6]
+        # p_false_pos_list: [.48, .83, .74, .47, .82, .83, .38, .55, .91, .75]
+        p_false_pos_list: [.4, .4, .4, .4, .4, .4, .4, .4, .4, .4]
+        #               0-.1, .1-.2, .2-.3, .3-.4, .4-.5, .... .9-1
+
+        hist_bins: [0.1, 0.145, 0.19, 0.235, 0.28, 0.325, 0.37, 0.415, 0.46, 0.505, 0.55, 0.595, 0.64, 0.685, 0.73, 0.775, 0.82, 0.865, 0.91, 0.955, 1.]
+        false_pos_hist: [7300, 2664, 1238, 729, 376, 204, 130, 75, 58, 36, 30, 13, 10, 7, 7, 2, 2, 1, 1, 1]
+        true_pos_hist: [4481, 2845, 2156, 1989, 2204, 2005, 1539, 1261, 963, 740, 538, 420, 356, 301, 268, 323, 386, 477, 491, 260]

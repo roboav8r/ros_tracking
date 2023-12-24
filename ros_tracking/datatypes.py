@@ -39,19 +39,29 @@ class GraphTrack():
         self.time_updated = graph_det.timestamp
         self.dt = 0.
         self.metadata = graph_det.metadata
+        self.n_missed = 0
+        self.n_matched = 1
 
         # Get semantic parameters
         self.class_dist = gtsam.DiscreteDistribution(prob_class_label.likelihood(det_params[graph_det.class_string]['idx']))
         self.class_conf = graph_det.class_conf
 
         # Compute existence probability
-        p_exists_det_matrix = np.array([[det_params['p_false_pos'][det_params[graph_det.class_string]['idx']], 1 - det_params['p_false_pos'][det_params[graph_det.class_string]['idx']]],
-                                     [1 - det_params['p_missed_det'][self.class_dist.argmax()], det_params['p_missed_det'][self.class_dist.argmax()]]])
-        exists_det_spec = ComputeMatrixSpec(p_exists_det_matrix)
-        self.p_exists_det = gtsam.DiscreteConditional((det_params['exist_sym'],2),[(det_params['det_sym'],2)],exists_det_spec)
+        hist_ind = np.searchsorted( det_params['hist_bins'], float(graph_det.class_conf), side='right') -1
+        # p_exists_det_matrix = np.array([[det_params['false_pos_hist'][hist_ind], det_params['true_pos_hist'][hist_ind]],
+        #                              [1 - det_params['p_missed_det'][self.class_dist.argmax()], det_params['p_missed_det'][self.class_dist.argmax()]]])
+        # exists_det_spec = ComputeMatrixSpec(p_exists_det_matrix)
+        # self.p_exists_det = gtsam.DiscreteConditional((det_params['exist_sym'],2),[(det_params['det_sym'],2)],exists_det_spec)
 
-        # self.track_conf = gtsam.DiscreteDistribution(prob_exists_det.likelihood(0))
-        self.track_conf = gtsam.DiscreteDistribution(self.p_exists_det.likelihood(0))
+        # self.track_conf = gtsam.DiscreteDistribution(self.p_exists_det.likelihood(0))
+        self.track_conf = gtsam.DiscreteDistribution([gtsam.symbol('e',self.trk_id),2],[det_params['false_pos_hist'][hist_ind],det_params['true_pos_hist'][hist_ind]])
+
+        # print("INIT TRACK CONF")
+        # print("Det conf is %s" % graph_det.class_conf)
+        # print("conditional prob: %s" % self.p_exists_det)
+        # print("track conf: %s" % self.track_conf)
+
+        # self.track_conf = gtsam.DiscreteDistribution([gtsam.symbol('t',self.trk_id),2],[det_params['false_pos_hist'][hist_ind],det_params['true_pos_hist'][hist_ind]])
 
         # Initialize spatial state
         # Linear
@@ -130,18 +140,42 @@ class GraphTrack():
         self.time_updated = det.timestamp
         self.n_missed = 0
         self.metadata = det.metadata
-        # self.n_matches += 1
+        self.n_matched += 1
         self.class_dist = gtsam.DiscreteDistribution(prob_class_label.likelihood(det_params[det.class_string]['idx'])*self.class_dist)
 
 
         # Compute existence probability
-        p_exists_det_matrix = np.array([[det_params['p_false_pos'][det_params[det.class_string]['idx']], 1 - det_params['p_false_pos'][det_params[det.class_string]['idx']]],
-                                     [1 - det_params['p_missed_det'][self.class_dist.argmax()], det_params['p_missed_det'][self.class_dist.argmax()]]])
-        exists_det_spec = ComputeMatrixSpec(p_exists_det_matrix)
-        self.p_exists_det = gtsam.DiscreteConditional((det_params['exist_sym'],2),[(det_params['det_sym'],2)],exists_det_spec)
+
+        hist_ind = np.searchsorted( det_params['hist_bins'], float(det.class_conf), side='right') -1
+        # print("UPDATE")
+        # print("Track conf was %s, got det conf %s" % (self.track_conf, det.class_conf))
+        # print("False pos is %s, true pos is %s" % (det_params['false_pos_hist'][hist_ind],det_params['true_pos_hist'][hist_ind]))
+        
+        # p_exists_det_matrix = np.array([[det_params['false_pos_hist'][hist_ind], det_params['true_pos_hist'][hist_ind]],
+        #                              [1 - det_params['p_missed_det'][self.class_dist.argmax()], det_params['p_missed_det'][self.class_dist.argmax()]]])
+        # exists_det_spec = ComputeMatrixSpec(p_exists_det_matrix)
+        # self.p_exists_det = gtsam.DiscreteConditional((det_params['exist_sym'],2),[(det_params['det_sym'],2)],exists_det_spec)
+
+        # self.track_conf = gtsam.DiscreteDistribution(self.p_exists_det.likelihood(0))
+        self.track_conf = gtsam.DiscreteDistribution([gtsam.symbol('e',self.trk_id),2],[det_params['false_pos_hist'][hist_ind]*self.track_conf(0),det_params['true_pos_hist'][hist_ind]*self.track_conf(1)])
+        # print("Now it's %s" % (self.track_conf))
+
+
+
+        # p_exists_det_matrix = np.array([[det_params['p_false_pos'][det_params[det.class_string]['idx']], 1 - det_params['p_false_pos'][det_params[det.class_string]['idx']]],
+        #                              [1 - det_params['p_missed_det'][self.class_dist.argmax()], det_params['p_missed_det'][self.class_dist.argmax()]]])
+        # exists_det_spec = ComputeMatrixSpec(p_exists_det_matrix)
+        # self.p_exists_det = gtsam.DiscreteConditional((det_params['exist_sym'],2),[(det_params['det_sym'],2)],exists_det_spec)
 
         # self.track_conf = gtsam.DiscreteDistribution(prob_exists_det.likelihood(0))
-        self.track_conf = gtsam.DiscreteDistribution(self.p_exists_det.likelihood(0)*self.track_conf)
+        # 
+
+
+        # hist_ind = np.searchsorted( det_params['hist_bins'], float(det.class_conf), side='right') -1
+
+        # self.track_conf = gtsam.DiscreteDistribution(gtsam.DiscreteDistribution([gtsam.symbol('t',self.trk_id),2],[det_params['false_pos_hist'][hist_ind],det_params['true_pos_hist'][hist_ind]])*self.track_conf)
+
+        # self.class_conf = det.class_conf
 
 
 

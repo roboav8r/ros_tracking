@@ -4,13 +4,28 @@ import numpy as np
 
 from tracking_msgs.msg import Track3D, Tracks3D
 from foxglove_msgs.msg import SceneEntity, SceneUpdate, ArrowPrimitive, CubePrimitive, TextPrimitive, KeyValuePair
+from diagnostic_msgs.msg import KeyValue
+
 
 def PublishTracks(tracker, pub_name):
     tracker.trks_msg = Tracks3D()
     tracker.trks_msg.header.frame_id = tracker.frame_id
     tracker.trks_msg.header.stamp = tracker.dets_msg.header.stamp
 
+
+    # kv = KeyValue()
+    # kv.key = tracker.dets_msg.detections[0].metadata[0].key
+    # kv.key = tracker.dets_msg.detections[0].metadata[0].value # TODO - ASSUMES there is at least one detection. if not, then this fails
+    tracker.trks_msg.metadata = tracker.dets_msg.detections[0].metadata
+
     for trk in tracker.trks:
+
+        if (tracker.object_classes[trk.class_dist.argmax()]) in ['void_ignore']:
+            continue
+
+        if trk.n_matched <= tracker.n_birth_min_list[trk.class_dist.argmax()]:
+            continue
+        
         # Create track message
         trk_msg = Track3D()
 
@@ -26,16 +41,29 @@ def PublishTracks(tracker, pub_name):
         trk_msg.twist.twist.linear.x = trk.spatial_state.mean()[3]
         trk_msg.twist.twist.linear.y = trk.spatial_state.mean()[4]
         trk_msg.twist.twist.linear.z = trk.spatial_state.mean()[5]
+
+        # Add orientation
+        cr = np.cos(0.5*trk.spatial_state.mean()[6])
+        sr = np.sin(0.5*trk.spatial_state.mean()[6])
+        cp = np.cos(0.5*trk.spatial_state.mean()[7])
+        sp = np.sin(0.5*trk.spatial_state.mean()[7])
+        cy = np.cos(0.5*trk.spatial_state.mean()[8])
+        sy = np.sin(0.5*trk.spatial_state.mean()[8])
+
+        trk_msg.pose.pose.orientation.w = cr*cp*cy + sr*sp*sy
+        trk_msg.pose.pose.orientation.x = sr*cp*cy - cr*sp*sy
+        trk_msg.pose.pose.orientation.y = cr*sp*cy + sr*cp*sy
+        trk_msg.pose.pose.orientation.z = cr*cp*sy - sr*sp*cy
        
-        # TODO - add covariances and object size/bbox
+        # TODO - add covariances 
         # trk_msg.pose.covariance =        
         # trk_msg.twist.covariance =
-        # trk_msg.height = 
-        # trk_msg.width = 
-        # trk_msg.depth = 
+        trk_msg.bbox.size.x = trk.spatial_state.mean()[12]
+        trk_msg.bbox.size.y = trk.spatial_state.mean()[13]
+        trk_msg.bbox.size.z =  trk.spatial_state.mean()[14]
     
         # Add semantic information to message
-        trk_msg.class_confidence = trk.class_dist(trk.class_dist.argmax())
+        trk_msg.class_confidence = float(trk.class_conf)
         trk_msg.class_string = tracker.object_classes[trk.class_dist.argmax()]
 
         tracker.trks_msg.tracks.append(trk_msg)
@@ -48,6 +76,12 @@ def PublishScene(tracker, pub_name):
     tracker.scene_msg = SceneUpdate()
 
     for trk in tracker.trks:
+
+        if (tracker.object_classes[trk.class_dist.argmax()]) in ['void_ignore']:
+            continue
+
+        if trk.n_matched <= tracker.n_birth_min_list[trk.class_dist.argmax()]:
+            continue
 
         # Create track message
         entity_msg = SceneEntity()
@@ -136,7 +170,8 @@ def PublishScene(tracker, pub_name):
 
         trk_md = KeyValuePair()
         trk_md.key = 'track_score'
-        trk_md.value = str(trk.track_conf(1))
+        # trk_md.value = str(trk.track_conf(1))
+        trk_md.value = str(trk.class_conf)
         entity_msg.metadata.append(trk_md)
 
         tracker.scene_msg.entities.append(entity_msg)

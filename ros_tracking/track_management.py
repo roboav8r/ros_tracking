@@ -7,14 +7,15 @@ from ros_tracking.datatypes import GraphTrack
 
 def CreateTrack(tracker, det, prob_class_det, det_idx_map):
     # return tracker.object_classes[gtsam.DiscreteDistribution(prob_class_det.likelihood(det_idx_map[det.class_string])).argmax()] not in ['false_detection','void_ignore']
+    # return float(det.class_conf) > 0.3
     return True
 
 def ValidTrack(trk, tracker):
     # return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore']) and ((trk.missed_det < tracker.trk_delete_missed_det) or ((tracker.get_clock().now() - trk.timestamp).nanoseconds/10**9 < tracker.trk_timeout))
     # return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore']) and (((tracker.get_clock().now() - trk.timestamp).nanoseconds/10**9 < tracker.trk_timeout))
     # return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore'])
-    # return trk.n_missed < 3
-    return trk.track_conf(0) < tracker.del_thresh
+    return trk.n_missed <= tracker.n_age_max_list[trk.class_dist.argmax()]
+    # return trk.track_conf(0) < tracker.del_thresh
 
 def CreateTracks(tracker, prob_class_label, det_idx_map):
     while tracker.dets:
