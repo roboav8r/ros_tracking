@@ -85,7 +85,7 @@ class Tracker(Node):
         self.propagate_tracks()
 
         # ASSIGN detections to tracks
-        ComputeAssignment(self)
+        ComputeAssignment(self, prob_class_label, det_params)
         self.get_logger().info("ASSIGN: cost matrix has shape %lix%li \n" % (self.cost_matrix.shape[0],self.cost_matrix.shape[1]))
         self.get_logger().info("ASSIGN: det assignment vector has length %li \n" % (len(self.det_asgn_idx)))
         self.get_logger().info("ASSIGN: trk assignment vector has length %li \n" % (len(self.trk_asgn_idx)))
@@ -109,6 +109,8 @@ class Tracker(Node):
                 # print("Now it's %s" % (trk.track_conf))
                 trk.metadata = metadata
                 trk.n_missed += 1
+                trk.n_matched = 0
+
         DeleteTracks(self)
         # self.get_logger().info("DELETE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 

@@ -20,11 +20,16 @@ def PublishTracks(tracker, pub_name):
 
     for trk in tracker.trks:
 
-        if (tracker.object_classes[trk.class_dist.argmax()]) in ['void_ignore']:
-            continue
+        # if (tracker.object_classes[trk.class_dist.argmax()]) in ['void_ignore']:
+        #     continue
 
-        if trk.n_matched <= tracker.n_birth_min_list[trk.class_dist.argmax()]:
-            continue
+        if tracker.trk_mgmt_method=="count":
+            if trk.n_matched < tracker.n_birth_min_list[trk.class_dist.argmax()]:
+                continue
+        
+        if tracker.trk_mgmt_method=="prob":
+            if trk.track_conf(1) < tracker.pub_thresh:
+                continue
         
         # Create track message
         trk_msg = Track3D()
@@ -33,6 +38,10 @@ def PublishTracks(tracker, pub_name):
         trk_msg.time_created = trk.time_created.to_msg()
         trk_msg.time_updated = trk.time_updated.to_msg()
         trk_msg.track_id = trk.trk_id
+        if tracker.trk_mgmt_method=="prob":
+            trk_msg.track_confidence = trk.track_conf(1)
+        if tracker.trk_mgmt_method=="count":
+            trk_msg.track_confidence = trk.class_conf
 
         # Add spatial information to message
         trk_msg.pose.pose.position.x = trk.spatial_state.mean()[0]

@@ -14,8 +14,12 @@ def ValidTrack(trk, tracker):
     # return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore']) and ((trk.missed_det < tracker.trk_delete_missed_det) or ((tracker.get_clock().now() - trk.timestamp).nanoseconds/10**9 < tracker.trk_timeout))
     # return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore']) and (((tracker.get_clock().now() - trk.timestamp).nanoseconds/10**9 < tracker.trk_timeout))
     # return (tracker.object_classes[trk.class_dist.argmax()] not in ['false_detection','void_ignore'])
-    return trk.n_missed <= tracker.n_age_max_list[trk.class_dist.argmax()]
-    # return trk.track_conf(0) < tracker.del_thresh
+    
+    if tracker.trk_mgmt_method=="count":
+        return trk.n_missed <= tracker.n_age_max_list[trk.class_dist.argmax()]
+    
+    if tracker.trk_mgmt_method=="prob":
+        return trk.track_conf(1) > tracker.del_thresh
 
 def CreateTracks(tracker, prob_class_label, det_idx_map):
     while tracker.dets:

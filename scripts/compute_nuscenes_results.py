@@ -21,7 +21,7 @@ from rosidl_runtime_py.utilities import get_message
 
 from std_srvs.srv import Empty
 from foxglove_msgs.msg import SceneUpdate, SceneEntity
-# from tracking_msgs.msg import Detections3D, Tracks3D
+from tracking_msgs.msg import Detections3D, Tracks3D
 
 
 class ComputeNuscenesResults(Node):
@@ -50,15 +50,13 @@ class ComputeNuscenesResults(Node):
         # Create ROS objects
         self.reset_tracker_client = self.create_client(Empty, "reset_tracker")
         self.reset_req = Empty.Request()
-        # self.writer = rosbag2_py.SequentialWriter()
-        # self.subscription = self.create_subscription(SceneUpdate,self.track_topic,self.tracker_callback,10)
         self.publisher = self.create_publisher(SceneUpdate,self.det_topic,10)
         self.reader = rosbag2_py.SequentialReader()
 
         # Member variables
         times = []
         self.msg_count=0
-        self.debug_dict = dict()
+        # self.debug_dict = dict()
 
         # Create nuscenes dataset object
         # nusc = NuScenes(version=self.dataset_name, dataroot=str(self.nuscenes_dir), verbose=True)
@@ -116,7 +114,7 @@ class ComputeNuscenesResults(Node):
                     tic = time.process_time()
 
                     # wait for the track response from the tracker
-                    ret, trk_msg = wait_for_message(SceneUpdate, self, self.track_topic)
+                    ret, trk_msg = wait_for_message(Tracks3D, self, self.track_topic)
                     toc = time.process_time()
                     times.append(toc-tic)
                     self.tracker_callback(trk_msg)
@@ -125,8 +123,8 @@ class ComputeNuscenesResults(Node):
         with open(self.results_dir + "/results.json", "w") as outfile:
             json.dump(self.results_dict, outfile, indent=2)
 
-        with open(self.results_dir + "/debug.json", "w") as outfile:
-            json.dump(self.debug_dict, outfile, indent=2)
+        # with open(self.results_dir + "/debug.json", "w") as outfile:
+        #     json.dump(self.debug_dict, outfile, indent=2)
 
         
 
@@ -135,54 +133,50 @@ class ComputeNuscenesResults(Node):
     def tracker_callback(self, msg):
         self.msg_count+=1
         self.get_logger().info("Tracker msg #%d received" % self.msg_count)
-        self.get_logger().info("CALLBACK: has %i tracks\n" % (len(msg.entities)))
+        self.get_logger().info("CALLBACK: has %i tracks\n" % (len(msg.tracks)))
 
 
-        self.debug_dict[self.msg_count] = dict()
-        self.debug_dict[self.msg_count]['sample_token'] = msg.entities[0].metadata[3].value
-        self.debug_dict[self.msg_count]['trk_ids'] = []
+        for kv in msg.metadata:
+            if kv.key == "sample_token":
+                if (kv.value) not in self.results_dict["results"].keys():
+                    self.results_dict["results"][kv.value] = []
+
+
 
         # Populate dictionary entry
-        for entity in msg.entities:
+        for track in msg.tracks:
 
-        # sample_result {
-        #     "sample_token":   <str>         -- Foreign key. Identifies the sample/keyframe for which objects are detected.
-        #     "translation":    <float> [3]   -- Estimated bounding box location in meters in the global frame: center_x, center_y, center_z.
-        #     "size":           <float> [3]   -- Estimated bounding box size in meters: width, length, height.
-        #     "rotation":       <float> [4]   -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
-        #     "velocity":       <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
-        #     "tracking_id":    <str>         -- Unique object id that is used to identify an object track across samples.
-        #     "tracking_name":  <str>         -- The predicted class for this sample_result, e.g. car, pedestrian.
-        #                                     Note that the tracking_name cannot change throughout a track.
-        #     "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name.
-        #                                     We average over frame level scores to compute the track level score.
-        #                                     The score is used to determine positive and negative tracks via thresholding.
-        # }
-            
-            if (entity.metadata[0].value) in ['void_ignore']:
+            if track.class_string in ['void_ignore']:
                 continue
 
-            if (float(entity.metadata[4].value) < 0.5):
-                continue
-
-            if (entity.metadata[3].value) not in self.results_dict["results"].keys():
-                self.results_dict["results"][entity.metadata[3].value] = []
+            # sample_result {
+            #     "sample_token":   <str>         -- Foreign key. Identifies the sample/keyframe for which objects are detected.
+            #     "translation":    <float> [3]   -- Estimated bounding box location in meters in the global frame: center_x, center_y, center_z.
+            #     "size":           <float> [3]   -- Estimated bounding box size in meters: width, length, height.
+            #     "rotation":       <float> [4]   -- Estimated bounding box orientation as quaternion in the global frame: w, x, y, z.
+            #     "velocity":       <float> [2]   -- Estimated bounding box velocity in m/s in the global frame: vx, vy.
+            #     "tracking_id":    <str>         -- Unique object id that is used to identify an object track across samples.
+            #     "tracking_name":  <str>         -- The predicted class for this sample_result, e.g. car, pedestrian.
+            #                                     Note that the tracking_name cannot change throughout a track.
+            #     "tracking_score": <float>       -- Object prediction score between 0 and 1 for the class identified by tracking_name.
+            #                                     We average over frame level scores to compute the track level score.
+            #                                     The score is used to determine positive and negative tracks via thresholding.
+            # }
 
             track_dict = dict()
-            track_dict["sample_token"] = entity.metadata[3].value
-            track_dict["translation"] = [entity.cubes[0].pose.position.x, entity.cubes[0].pose.position.y, entity.cubes[0].pose.position.z]
-            track_dict["size"] = [entity.cubes[0].size.y, entity.cubes[0].size.x, entity.cubes[0].size.z] 
-            track_dict["rotation"] = [entity.cubes[0].pose.orientation.w, entity.cubes[0].pose.orientation.x, entity.cubes[0].pose.orientation.y, entity.cubes[0].pose.orientation.z]
+            track_dict["sample_token"] = msg.metadata[0].value
+            track_dict["translation"] = [track.pose.pose.position.x, track.pose.pose.position.y, track.pose.pose.position.z]
+            track_dict["size"] = [track.bbox.size.y, track.bbox.size.x, track.bbox.size.z] 
+            track_dict["rotation"] = [track.pose.pose.orientation.w, track.pose.pose.orientation.x, track.pose.pose.orientation.y, track.pose.pose.orientation.z]
             track_dict["velocity"] = [0., 0.]
-            track_dict["attribute_name"] = entity.metadata[2].value
-            track_dict["tracking_score"] = float(entity.metadata[4].value) #track existence confidence
-            track_dict["tracking_name"] = entity.metadata[0].value #track.class_string
-            track_dict["tracking_id"] = int(entity.id) #track.track_id
+            track_dict["attribute_name"] = '' # TODO - add attributes
+            # track_dict["tracking_score"] = float(track.class_confidence)
+            track_dict["tracking_score"] = track.track_confidence
+            track_dict["tracking_name"] = track.class_string
+            track_dict["tracking_id"] = int(track.track_id) #track.track_id
 
-            self.debug_dict[self.msg_count]['trk_ids'].append(int(entity.id))
-            self.results_dict["results"][entity.metadata[3].value].append(track_dict)
-
-
+            # self.debug_dict[self.msg_count]['trk_ids'].append(int(entity.id))
+            self.results_dict["results"][msg.metadata[0].value].append(track_dict)
 
 def main(args=None):
     rclpy.init(args=args)

@@ -18,7 +18,8 @@ def ConfigureTracker(tracker):
     tracker.declare_parameter('tracker.publishers.names', rclpy.Parameter.Type.STRING_ARRAY)
     tracker.declare_parameter('tracker.n_age_max_list', rclpy.Parameter.Type.INTEGER_ARRAY)
     tracker.declare_parameter('tracker.n_birth_min_list', rclpy.Parameter.Type.INTEGER_ARRAY)
-    
+    tracker.declare_parameter('tracker.trk_mgmt_method', rclpy.Parameter.Type.STRING)
+
     # Read parameters and assign to tracker object
     tracker.dim_objects = tracker.get_parameter('tracker.dim_objects').get_parameter_value().integer_value
     tracker.object_classes = tracker.get_parameter('tracker.object_classes').get_parameter_value().string_array_value
@@ -28,6 +29,7 @@ def ConfigureTracker(tracker):
     tracker.pub_thresh = tracker.get_parameter('tracker.pub_thresh').get_parameter_value().double_value
     tracker.n_age_max_list = tracker.get_parameter('tracker.n_age_max_list').get_parameter_value().integer_array_value
     tracker.n_birth_min_list= tracker.get_parameter('tracker.n_birth_min_list').get_parameter_value().integer_array_value
+    tracker.trk_mgmt_method = tracker.get_parameter('tracker.trk_mgmt_method').get_parameter_value().string_value
 
     tracker.class_idx_map = dict()
     for idx, class_name in enumerate(tracker.object_classes):

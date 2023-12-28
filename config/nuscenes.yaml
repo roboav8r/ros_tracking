@@ -19,7 +19,7 @@ compute_nuscenes_node:
 tracker:
   ros__parameters:
     tracker:
-      dim_objects: 9
+      dim_objects: 8
       object_classes: ['void_ignore',
            'bicycle',
            'bus',
@@ -29,7 +29,7 @@ tracker:
            'trailer',
            'truck']
       frame_id: 'map'
-      asgn_thresh: 2.0
+      asgn_thresh: 10.0
       # trk_timeout: 1.5
       publishers:
         # names: ['track_pub', 'scene_pub']
@@ -45,11 +45,12 @@ tracker:
         #   routine: 'PublishScene'
 
       # Track management
-      del_thresh: 0.9
-      pub_thresh: 0.5
+      trk_mgmt_method: 'prob' # Count or prob
+      del_thresh: 0.1 # track confidence below which track is deleted
+      pub_thresh: 0.2 # track confidence above which track is published
       
-      n_birth_min_list: [1, 2, 1, 1, 3, 1, 2, 1]
-      n_age_max_list: [3, 3, 2, 2, 2, 2, 3, 3]
+      n_birth_min_list: [1, 3, 1, 1, 3, 1, 3, 1]
+      n_age_max_list: [2, 2, 2, 2, 2, 2, 2, 2]
 
     sensors:
 
@@ -87,37 +88,39 @@ tracker:
               'trailer',
               'truck']
         # p(Z_label|X_class): 
-        # columns are dets: missed / barrier / bicycle / bus / car / construction_vehicle / motorcycle / pedestrian / traffic_cone / trailer / truck 
-        # semantic_sensor_model: [0.000000, 0.125731, 0.083376, 0.038285, 0.217438, 0.061180, 0.068748, 0.117527, 0.090626, 0.088209, 0.108878, # false_det = nothing there
-        #                         0.096489, 0.498358, 0.010609, 0.002273, 0.025006, 0.042182, 0.006062, 0.020965, 0.282900, 0.009598, 0.005557, # void_ignore - barrier, construction_vehicle, traffic cone
-        #                         0.089005, 0.047120, 0.586387, 0.005236, 0.062827, 0.000000, 0.036649, 0.120419, 0.000000, 0.010471, 0.041885, # bicycle - 20% missed chance, 5% misclassification chance
-        #                         0.390244, 0.000000, 0.000000, 0.476965, 0.021680, 0.010840, 0.000000, 0.000000, 0.000000, 0.016260, 0.084011, # bus
-        #                         0.222530, 0.007325, 0.006533, 0.007127, 0.657494, 0.007721, 0.010493, 0.005543, 0.003168, 0.004158, 0.067907, # car
-        #                         0.136792, 0.018868, 0.165094, 0.004717, 0.023585, 0.000000, 0.594340, 0.047170, 0.004717, 0.004717, 0.000000, # motorcycle
-        #                         0.131802, 0.018594, 0.018868, 0.002461, 0.014766, 0.003828, 0.007383, 0.783976, 0.008750, 0.003828, 0.005742, # pedestrian
-        #                         0.150000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.833333, 0.016667, # trailer
-        #                         0.198095, 0.011429, 0.000000, 0.009524, 0.196190, 0.011429, 0.000000, 0.007619, 0.000000, 0.005714, 0.560000] # truck
-        semantic_sensor_model: [0.498358, 0.010609, 0.002273, 0.025006, 0.042182, 0.006062, 0.020965, 0.282900, 0.009598, 0.005557, # void_ignore - barrier, construction_vehicle, traffic cone
-                        0.047120, 0.586387, 0.005236, 0.062827, 0.000000, 0.036649, 0.120419, 0.000000, 0.010471, 0.041885, # bicycle - 20% missed chance, 5% misclassification chance
-                        0.000000, 0.000000, 0.476965, 0.021680, 0.010840, 0.000000, 0.000000, 0.000000, 0.016260, 0.084011, # bus
-                        0.007325, 0.006533, 0.007127, 0.657494, 0.007721, 0.010493, 0.005543, 0.003168, 0.004158, 0.067907, # car
-                        0.018868, 0.165094, 0.004717, 0.023585, 0.000000, 0.594340, 0.047170, 0.004717, 0.004717, 0.000000, # motorcycle
-                        0.018594, 0.018868, 0.002461, 0.014766, 0.003828, 0.007383, 0.783976, 0.008750, 0.003828, 0.005742, # pedestrian
-                        0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.833333, 0.016667, # trailer
-                        0.011429, 0.000000, 0.009524, 0.196190, 0.011429, 0.000000, 0.007619, 0.000000, 0.005714, 0.560000] # truck
+        # columns are dets:  barrier / bicycle / bus / car / construction_vehicle / motorcycle / pedestrian / traffic_cone / trailer / truck 
+        semantic_sensor_model: [0.57, 0., 0., 0., 0.05, 0., 0., 0.38, 0., 0., # void_ignore - barrier, construction_vehicle, traffic cone
+                        0., 1., 0., 0., 0., 0., 0., 0., 0., 0., # bicycle - 20% missed chance, 5% misclassification chance
+                        0., 0., 1., 0., 0., 0., 0., 0., 0., 0., # bus
+                        0., 0., 0., 1., 0., 0., 0., 0., 0., 0., # car
+                        0., 0., 0., 0., 0., 1., 0., 0., 0., 0., # motorcycle
+                        0., 0., 0., 0., 0., 0., 1., 0., 0., 0., # pedestrian
+                        0., 0., 0., 0., 0., 0., 0., 0., 1., 0., # trailer
+                        0.011429, 0.000000, 0.009524, 0.196190, 0.011429, 0.000000, 0.007619, 0.000000, 0.005714, 1.] # truck
 
         # p_missed_det: 0.30
         # p_false_pos: .60
 
 
         #                 void_ignore / bicycle / bus / car / motorcycle / pedestrian / trailer / truck
-        p_missed_det_list: [.2, .2, .2, .2, .2, .2, .2, .2]
 
-        #                 barrier / bicycle / bus / car / construction_vehicle / motorcycle / pedestrian / traffic_cone / trailer / truck
-        # p_false_pos_list: [.48, .83, .74, .47, .82, .83, .38, .55, .91, .75]
-        p_false_pos_list: [.4, .4, .4, .4, .4, .4, .4, .4, .4, .4]
-        #               0-.1, .1-.2, .2-.3, .3-.4, .4-.5, .... .9-1
+        # p_missed_det_list: [.2, .1, .2, .05, .2, .05, .2, .2] # heuristic
+        p_missed_det_list: [.20, .33, .34, .25, .25, .20, .42, .36] # from validation training
 
-        hist_bins: [0.1, 0.145, 0.19, 0.235, 0.28, 0.325, 0.37, 0.415, 0.46, 0.505, 0.55, 0.595, 0.64, 0.685, 0.73, 0.775, 0.82, 0.865, 0.91, 0.955, 1.]
-        false_pos_hist: [7300, 2664, 1238, 729, 376, 204, 130, 75, 58, 36, 30, 13, 10, 7, 7, 2, 2, 1, 1, 1]
-        true_pos_hist: [4481, 2845, 2156, 1989, 2204, 2005, 1539, 1261, 963, 740, 538, 420, 356, 301, 268, 323, 386, 477, 491, 260]
+        hist_bins: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ]
+        false_pos_hist: [10314,  1797,   484,   177,    69,    26,    11,     3,     1, # 'void_ignore',
+                        989, 114,  32,   9,   3,   1,   1,   1,   1, # 'bicycle',
+                        436,  75,  25,   9,   3,   2,   1,   1,   1, # 'bus',
+                        2332,  481,  157,   59,   36,   14,    8,    3,    1, # 'car',
+                        840, 111,  25,  13,   3,   1,   1,   1,   1, # 'motorcycle',
+                        1047,  218,   54,   10,    4,    1,    1,    1,    1, # 'pedestrian',
+                        1162,  184,   30,   15,    3,    1,    1,    1,    1, # 'trailer',
+                        1009,  167,   24,    9,    5,    4,    1,    1,    1] # 'truck'
+        true_pos_hist: [7832, 4657, 4264, 2588, 1419,  845,  633,  914,  851, # 'void_ignore',
+                        500, 200,  100,  75,  20,  20,   6,   6,   6, # 'bicycle',
+                        59,  54,  15,   7,  10,   9,  10,  24, 107, # 'bus',
+                        606, 339, 335, 337, 303, 408, 456, 784, 505, # 'car',
+                        211,  40,  31,  23,  12,  14,  12,  12,  15, # 'motorcycle',
+                        1648, 1814, 2016, 1101,  573,  163,   26,    26,    26, # 'pedestrian',
+                        88, 15,  7,  1,  1,  1,  1,  2, 39, # 'trailer',
+                        670, 151,  81,  58,  68,  48,  65,  51,  81] # 'truck'

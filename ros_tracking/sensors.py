@@ -30,15 +30,15 @@ def CreateSensorModel(tracker, sensor_params, class_sym, label_sym, exist_sym, d
 
     det_params = dict()
     det_params['p_missed_det'] = sensor_params['p_missed_det_list']
-    det_params['p_false_pos'] = sensor_params['p_false_pos_list']
+    # det_params['p_false_pos'] = sensor_params['p_false_pos_list']
     det_params['class_sym'] = class_sym
     det_params['label_sym'] = label_sym
     det_params['exist_sym'] = exist_sym
     det_params['det_sym'] = det_sym
 
     det_params['hist_bins'] = sensor_params['hist_bins']
-    det_params['false_pos_hist'] = sensor_params['false_pos_hist']
-    det_params['true_pos_hist'] = sensor_params['true_pos_hist']   
+    det_params['false_pos_hist'] = np.array(sensor_params['false_pos_hist']).reshape((sensor_params['dim_classes'],len(det_params['hist_bins']) - 1))
+    det_params['true_pos_hist'] = np.array(sensor_params['true_pos_hist']).reshape((sensor_params['dim_classes'],len(det_params['hist_bins']) - 1))
 
     for idx, class_name in enumerate(sensor_params['detection_classes']):
         det_params[class_name] = dict()
@@ -78,7 +78,7 @@ def CreateSensorModels(tracker):
         tracker.declare_parameter('sensors.' + sensor + '.detection_classes')
         tracker.declare_parameter('sensors.' + sensor + '.semantic_sensor_model')
         tracker.declare_parameter('sensors.' + sensor + '.p_missed_det_list')
-        tracker.declare_parameter('sensors.' + sensor + '.p_false_pos_list')
+        # tracker.declare_parameter('sensors.' + sensor + '.p_false_pos_list')
         tracker.declare_parameter('sensors.' + sensor + '.hist_bins', rclpy.Parameter.Type.DOUBLE_ARRAY)
         tracker.declare_parameter('sensors.' + sensor + '.false_pos_hist', rclpy.Parameter.Type.INTEGER_ARRAY)
         tracker.declare_parameter('sensors.' + sensor + '.true_pos_hist', rclpy.Parameter.Type.INTEGER_ARRAY)
@@ -97,7 +97,7 @@ def CreateSensorModels(tracker):
         sensor_params['detection_classes'] = tracker.get_parameter('sensors.' + sensor + '.detection_classes').get_parameter_value().string_array_value
         sensor_params['semantic_sensor_model'] = tracker.get_parameter('sensors.' + sensor + '.semantic_sensor_model').get_parameter_value().double_array_value
         sensor_params['p_missed_det_list'] = tracker.get_parameter('sensors.' + sensor + '.p_missed_det_list').get_parameter_value().double_array_value
-        sensor_params['p_false_pos_list'] = tracker.get_parameter('sensors.' + sensor + '.p_false_pos_list').get_parameter_value().double_array_value
+        # sensor_params['p_false_pos_list'] = tracker.get_parameter('sensors.' + sensor + '.p_false_pos_list').get_parameter_value().double_array_value
 
         sensor_params['hist_bins'] = tracker.get_parameter('sensors.' + sensor + '.hist_bins').get_parameter_value().double_array_value
         sensor_params['false_pos_hist'] = tracker.get_parameter('sensors.' + sensor + '.false_pos_hist').get_parameter_value().integer_array_value

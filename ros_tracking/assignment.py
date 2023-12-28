@@ -1,15 +1,27 @@
 from scipy.optimize import linear_sum_assignment
 import numpy as np
+import gtsam
 
-def Cost(det, track):
+def Cost(det, track, prob_class_label, det_params, tracker):
+
+    # tracker.get_logger().info("COST: detection has class index %li, det string %s, class string %s" % (det_params[det.class_string]['idx'], det.class_string, tracker.object_classes[gtsam.DiscreteDistribution(prob_class_label.likelihood(det_params[det.class_string]['idx'])).argmax()]))
+    # tracker.get_logger().info("COST: track has class index %li, class string %s" % (track.class_dist.argmax(), tracker.object_classes[track.class_dist.argmax()]))
+
+    if gtsam.DiscreteDistribution(prob_class_label.likelihood(det_params[det.class_string]['idx'])).argmax() != track.class_dist.argmax():
+        class_mismatch_penalty = 20.
+    else:
+        class_mismatch_penalty = 0.
+
+    # tracker.get_logger().info("COST: penalty is %li \n" % (class_mismatch_penalty))
+
     # Euclidean distance between positions
-    return np.linalg.norm(det.pos[:,0] - track.spatial_state.mean()[0:3])
+    return np.linalg.norm(det.pos[:,0] - track.spatial_state.mean()[0:3]) + class_mismatch_penalty
 
-def ComputeCostMatrix(tracker):
+def ComputeCostMatrix(tracker, prob_class_label, det_params):
     tracker.cost_matrix = np.zeros((len(tracker.dets),len(tracker.trks)))
     for ii,det in enumerate(tracker.dets):
         for jj,trk in enumerate(tracker.trks):
-            tracker.cost_matrix[ii,jj] = Cost(det,trk)
+            tracker.cost_matrix[ii,jj] = Cost(det, trk, prob_class_label, det_params, tracker)
     
 def SolveCostMatrix(tracker):
     tracker.det_asgn_idx, tracker.trk_asgn_idx = linear_sum_assignment(tracker.cost_matrix)
@@ -25,6 +37,6 @@ def SolveCostMatrix(tracker):
         ii -=1
     assert(len(tracker.det_asgn_idx) == len(tracker.trk_asgn_idx))
 
-def ComputeAssignment(tracker):    
-    ComputeCostMatrix(tracker)
+def ComputeAssignment(tracker, prob_class_label, det_params):    
+    ComputeCostMatrix(tracker, prob_class_label, det_params)
     SolveCostMatrix(tracker)

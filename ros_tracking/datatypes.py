@@ -54,7 +54,7 @@ class GraphTrack():
         # self.p_exists_det = gtsam.DiscreteConditional((det_params['exist_sym'],2),[(det_params['det_sym'],2)],exists_det_spec)
 
         # self.track_conf = gtsam.DiscreteDistribution(self.p_exists_det.likelihood(0))
-        self.track_conf = gtsam.DiscreteDistribution([gtsam.symbol('e',self.trk_id),2],[det_params['false_pos_hist'][hist_ind],det_params['true_pos_hist'][hist_ind]])
+        self.track_conf = gtsam.DiscreteDistribution([gtsam.symbol('e',self.trk_id),2],[det_params['false_pos_hist'][self.class_dist.argmax()][hist_ind],det_params['true_pos_hist'][self.class_dist.argmax()][hist_ind]])
 
         # print("INIT TRACK CONF")
         # print("Det conf is %s" % graph_det.class_conf)
@@ -145,7 +145,6 @@ class GraphTrack():
 
 
         # Compute existence probability
-
         hist_ind = np.searchsorted( det_params['hist_bins'], float(det.class_conf), side='right') -1
         # print("UPDATE")
         # print("Track conf was %s, got det conf %s" % (self.track_conf, det.class_conf))
@@ -157,7 +156,7 @@ class GraphTrack():
         # self.p_exists_det = gtsam.DiscreteConditional((det_params['exist_sym'],2),[(det_params['det_sym'],2)],exists_det_spec)
 
         # self.track_conf = gtsam.DiscreteDistribution(self.p_exists_det.likelihood(0))
-        self.track_conf = gtsam.DiscreteDistribution([gtsam.symbol('e',self.trk_id),2],[det_params['false_pos_hist'][hist_ind]*self.track_conf(0),det_params['true_pos_hist'][hist_ind]*self.track_conf(1)])
+        self.track_conf = gtsam.DiscreteDistribution([gtsam.symbol('e',self.trk_id),2],[det_params['false_pos_hist'][self.class_dist.argmax()][hist_ind]*self.track_conf(0),det_params['true_pos_hist'][self.class_dist.argmax()][hist_ind]*self.track_conf(1)])
         # print("Now it's %s" % (self.track_conf))
 
 
@@ -175,7 +174,7 @@ class GraphTrack():
 
         # self.track_conf = gtsam.DiscreteDistribution(gtsam.DiscreteDistribution([gtsam.symbol('t',self.trk_id),2],[det_params['false_pos_hist'][hist_ind],det_params['true_pos_hist'][hist_ind]])*self.track_conf)
 
-        # self.class_conf = det.class_conf
+        self.class_conf = det.class_conf
 
 
 
