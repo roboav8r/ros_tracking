@@ -66,11 +66,11 @@ class Tracker(Node):
         for trk in self.trks:
             trk.propagate(self.dets_msg.header.stamp)
 
-    def update_tracks(self, obs_mdl, obs_var, prob_class_label, det_params):
+    def update_tracks(self, det_params):
         for det_idx, trk_idx in zip(self.det_asgn_idx, self.trk_asgn_idx):
-            self.trks[trk_idx].update(self.dets[det_idx], obs_mdl, obs_var, prob_class_label, det_params)
+            self.trks[trk_idx].update(self.dets[det_idx], det_params)
 
-    def det_callback(self, det_array_msg, obs_model, obs_variance, prob_class_label, det_params):
+    def det_callback(self, det_array_msg, det_params):
         self.dets_msg = det_array_msg
         metadata = self.dets_msg.detections[0].metadata
         self.dets = []
@@ -85,13 +85,13 @@ class Tracker(Node):
         self.propagate_tracks()
 
         # ASSIGN detections to tracks
-        ComputeAssignment(self, prob_class_label, det_params)
+        ComputeAssignment(self, det_params['p_class_label'], det_params)
         self.get_logger().info("ASSIGN: cost matrix has shape %lix%li \n" % (self.cost_matrix.shape[0],self.cost_matrix.shape[1]))
         self.get_logger().info("ASSIGN: det assignment vector has length %li \n" % (len(self.det_asgn_idx)))
         self.get_logger().info("ASSIGN: trk assignment vector has length %li \n" % (len(self.trk_asgn_idx)))
 
         # UPDATE tracks with assigned detections
-        self.update_tracks(obs_model, obs_variance, prob_class_label, det_params)
+        self.update_tracks(det_params)
 
         # UPDATE unmatched tracks (missed detections)
         for i, trk in enumerate(self.trks):
@@ -115,7 +115,7 @@ class Tracker(Node):
         # self.get_logger().info("DELETE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 
         # CREATE tracks from unmatched detections, as appropriate
-        CreateTracks(self, prob_class_label, det_params)
+        CreateTracks(self, det_params)
         # self.get_logger().info("CREATE: have %i tracks, %i detections \n" % (len(self.trks), len(self.dets)))
 
         # OUTPUT tracker results

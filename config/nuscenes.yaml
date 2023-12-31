@@ -11,7 +11,7 @@ compute_nuscenes_node:
     mcap_dir: '/home/jd/nuScenes/data/mcap'
     results_dir: '/home/jd/tracking_ws/src/ros_tracking/results'
     # dataset_name: 'v1.0-mini'
-    split_name: 'val'
+    split_name: 'mini_train'
     lidar_detector: 'megvii'
     track_topic: 'tracks'
     det_topic: '/detections'
@@ -45,36 +45,59 @@ tracker:
         #   routine: 'PublishScene'
 
       # Track management
-      trk_mgmt_method: 'prob' # Count or prob
-      del_thresh: 0.1 # track confidence below which track is deleted
-      pub_thresh: 0.2 # track confidence above which track is published
+      trk_mgmt_method: 'count' # count or prob
+      del_thresh_list: [0.35,0.35,0.25,0.1,0.1,0.25,0.25,0.15] # track confidence below which track is deleted, per object class
+      pub_thresh_list: [0.6, 0.6,0.6,0.6,0.6,0.6,0.6,0.6] # track confidence above which track is published
       
       n_birth_min_list: [1, 3, 1, 1, 3, 1, 3, 1]
       n_age_max_list: [2, 2, 2, 2, 2, 2, 2, 2]
 
+    object_properties: # TODO - or motion/process models?
+      object_classes: ['void_ignore',
+           'bicycle',
+           'bus',
+           'car',
+           'motorcycle',
+           'pedestrian',
+           'trailer',
+           'truck']
+      void_ignore:
+        model_type: 'ab3dmot'
+        proc_var: [.01, .01, .01, .1, .1, .1, .1, .1, 0., 0., 0.]
+      bicycle:
+        model_type: 'ackermann'
+        proc_var: [.2, .2, .2, .2, .2, .2, .2, .2, 0., 0., 0.]
+      bus:
+        model_type: 'ackermann'
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
+      car:
+        model_type: 'ackermann'
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
+      motorcycle:
+        model_type: 'ackermann'
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
+      pedestrian:
+        model_type: 'ab3dmot'
+        proc_var: [.05, .05, .05, .05, .05, .05, .05, .05, 0., 0., 0.]
+      trailer:
+        model_type: 'ackermann'
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
+      truck:
+        model_type: 'ackermann'
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
+
+        # proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
     sensors:
 
       #Declare names of sensors upfront
       sensor_names: ['nuscenes-megvii']
+      
 
       # For each named sensor, give sensor model information
       nuscenes-megvii:
         detector_index: 0
         topic: 'converted_detections'
         msg_type: 'Detections3D'
-        
-        # Spatial sensor model
-        spatial_sensor_model: [1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.]
-        spatial_states: 15
-        spatial_meas: 6
-        sensor_variance: [.5, .25, .1, .01, .01, .01]
-
-        # Semantic sensor model        
         dim_classes: 8
         dim_detections: 10
         detection_classes: ['barrier',
@@ -87,6 +110,61 @@ tracker:
               'traffic_cone',
               'trailer',
               'truck']
+
+        # Spatial sensor model
+        spatial_sensor_model: [1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 
+                0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 
+                0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.,
+                0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.]
+        spatial_states: 11
+        spatial_meas: 8
+        sensor_variance: # values from mini_train
+          pos: [.18, .21, .016, # barrier
+                .039,.046,.017, #bicycle
+                .30, .16, .088, # bus
+                .068, .081, .026, # car
+                .077, .10, .049, # construction vehicle
+                .045, .084, .021, # motorcycle
+                .031, .037, .020, # pedestrian
+                .073, .056, .0094, # traffic cone
+                .082, .041, .023, # trailer
+                .13, .098, .037] # truck
+          yaw: [.079, # barrier
+                .075, # bicycle
+                .0015, # bus
+                .21, # car
+                .50, # construction_vehicle
+                .037, # motorcycle
+                .36, # pedestrian
+                .39, # traffic cone
+                .018, # trailer
+                .31] # truck
+          size: [.076,.098,.019, # barrier
+                 .031, .0098, .018, # bicycle
+                 1.1, .043, .061, # bus
+                 .076, .017, .018, # car
+                 1.4, .18, .17, # construction_vehicle
+                 .042, .025, .0068, # motorcycle
+                 .025, .011, .011, # pedestrian
+                 .019, .093, .012, # traffic cone
+                 .11, .071, .038, # trailer
+                 .59, .044, .046] # truck
+          conf: [.01, # barrier
+                .01, # bicycle
+                .01, # bus
+                .01, # car
+                .01, # construction_vehicle
+                .01, # motorcycle
+                .01, # pedestrian
+                .01, # traffic cone
+                .01, # trailer
+                .01] # truck
+
+        # Semantic sensor model        
         # p(Z_label|X_class): 
         # columns are dets:  barrier / bicycle / bus / car / construction_vehicle / motorcycle / pedestrian / traffic_cone / trailer / truck 
         semantic_sensor_model: [0.57, 0., 0., 0., 0.05, 0., 0., 0.38, 0., 0., # void_ignore - barrier, construction_vehicle, traffic cone
@@ -98,29 +176,31 @@ tracker:
                         0., 0., 0., 0., 0., 0., 0., 0., 1., 0., # trailer
                         0.011429, 0.000000, 0.009524, 0.196190, 0.011429, 0.000000, 0.007619, 0.000000, 0.005714, 1.] # truck
 
-        # p_missed_det: 0.30
-        # p_false_pos: .60
+        # From mini_train
+        p_missed_det_list: [0.19773001205303334, 
+                            0.32759344813103736, 
+                            0.34198860037998735, 
+                            0.2487625618719064, 
+                            0.2460127591706539, 
+                            0.19629079686726641, 
+                            0.41909112767492185, 
+                            0.3624554253693327]
 
-
-        #                 void_ignore / bicycle / bus / car / motorcycle / pedestrian / trailer / truck
-
-        # p_missed_det_list: [.2, .1, .2, .05, .2, .05, .2, .2] # heuristic
-        p_missed_det_list: [.20, .33, .34, .25, .25, .20, .42, .36] # from validation training
-
+        # From mini_train
         hist_bins: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ]
-        false_pos_hist: [10314,  1797,   484,   177,    69,    26,    11,     3,     1, # 'void_ignore',
-                        989, 114,  32,   9,   3,   1,   1,   1,   1, # 'bicycle',
-                        436,  75,  25,   9,   3,   2,   1,   1,   1, # 'bus',
-                        2332,  481,  157,   59,   36,   14,    8,    3,    1, # 'car',
-                        840, 111,  25,  13,   3,   1,   1,   1,   1, # 'motorcycle',
-                        1047,  218,   54,   10,    4,    1,    1,    1,    1, # 'pedestrian',
-                        1162,  184,   30,   15,    3,    1,    1,    1,    1, # 'trailer',
-                        1009,  167,   24,    9,    5,    4,    1,    1,    1] # 'truck'
-        true_pos_hist: [7832, 4657, 4264, 2588, 1419,  845,  633,  914,  851, # 'void_ignore',
-                        500, 200,  100,  75,  20,  20,   6,   6,   6, # 'bicycle',
-                        59,  54,  15,   7,  10,   9,  10,  24, 107, # 'bus',
-                        606, 339, 335, 337, 303, 408, 456, 784, 505, # 'car',
-                        211,  40,  31,  23,  12,  14,  12,  12,  15, # 'motorcycle',
-                        1648, 1814, 2016, 1101,  573,  163,   26,    26,    26, # 'pedestrian',
-                        88, 15,  7,  1,  1,  1,  1,  2, 39, # 'trailer',
-                        670, 151,  81,  58,  68,  48,  65,  51,  81] # 'truck'
+        false_pos_hist: [10314.,  1797.,   484.,   177.,    69.,    26.,    11.,     3.,     1., # 'void_ignore',
+                        8.27027027, 1.18918919, .364864865, .121621622, .0405405405, .00675675676, .00675675676, 0., 0., # 'bicycle',
+                        7.44088896, 1.54900159, 0.51382739, 0.22725374, 0.10694294, 0.06600384, 0.04762303, 0.03592614, 0.01253238, # 'bus',
+                        7.64770580, 1.41938577, .497898982, .217716236, .101666714, .0595053442, .0362390366, .0164979272, .00338419019, # 'car',
+                        8.00476632, 1.35795931, .398958471, .127543140, .0626682554, .0247142416, .0145637495, .00661988614, .00220662871, # 'motorcycle',
+                        7.53462604, 1.72151431, .576546630, .139242844, .0240073869, .00332409972, .000738688827, 0., 0., # 'pedestrian',
+                        8.20711809, 1.1805674 , 0.31468531, 0.14213429, 0.06708738, 0.04491444, 0.02302575, 0.0099494 , 0.01051794, # 'trailer',
+                        7.76773265, 1.37093510, .456528584, .180587415, .104124500, .0654432600, .0319345118, .0168668196, .00584716413] # 'truck'
+        true_pos_hist: [7832., 4657., 4264., 2588., 1419.,  845.,  633.,  914.,  851., # 'void_ignore',
+                        3.17926296, 1.67395378, 1.41786384, 1.13678951, 0.93066833, 0.61211743, 0.45596502, 0.29981262, 0.29356652, # 'bicycle',
+                        0.84215592, 0.51010587, 0.50529355, 0.53416747, 0.64485082, 0.55341675, 0.74109721, 1.26564004, 4.40327238, # bus
+                        1.53139663, 0.86220093, 0.7607068 , 0.73891052, 0.76935876, 0.86486307, 1.14039466, 1.9335463 , 1.39862234, # 'car',
+                        2.46430460, 1.17398202, 0.97831835, 0.92014807, 0.64516129, 0.63458488, 0.67689053, 0.867266  , 1.63934426, # 'motorcycle',
+                        1.66382902, 2.61909074, 2.94185836, 1.61746060, 0.769063575, 0.328925919, 0.0594095273, 0.000362253215, 0., # 'pedestrian',
+                        2.04470199, 1.5397351 , 0.98923841, 0.625     , 0.52566225, 0.60016556, 0.7781457 , 1.09271523, 1.80463576, # 'trailer',
+                        2.12145425, 1.15561326, 0.92588893, 0.84798242, 1.00878945, 0.9688374 , 1.01977627, 1.20055933, 0.75109868] # 'truck'

@@ -28,7 +28,7 @@ def PublishTracks(tracker, pub_name):
                 continue
         
         if tracker.trk_mgmt_method=="prob":
-            if trk.track_conf(1) < tracker.pub_thresh:
+            if trk.track_conf(1) < tracker.pub_thresh_list[trk.class_dist.argmax()]:
                 continue
         
         # Create track message
@@ -38,38 +38,70 @@ def PublishTracks(tracker, pub_name):
         trk_msg.time_created = trk.time_created.to_msg()
         trk_msg.time_updated = trk.time_updated.to_msg()
         trk_msg.track_id = trk.trk_id
+
         if tracker.trk_mgmt_method=="prob":
             trk_msg.track_confidence = trk.track_conf(1)
         if tracker.trk_mgmt_method=="count":
             trk_msg.track_confidence = trk.class_conf
 
-        # Add spatial information to message
-        trk_msg.pose.pose.position.x = trk.spatial_state.mean()[0]
-        trk_msg.pose.pose.position.y = trk.spatial_state.mean()[1]
-        trk_msg.pose.pose.position.z = trk.spatial_state.mean()[2]
-        trk_msg.twist.twist.linear.x = trk.spatial_state.mean()[3]
-        trk_msg.twist.twist.linear.y = trk.spatial_state.mean()[4]
-        trk_msg.twist.twist.linear.z = trk.spatial_state.mean()[5]
+        if trk.obj_params['model_type'] in ['ab3dmot','ackermann']:
+            # Add spatial information to message
+            trk_msg.pose.pose.position.x = trk.spatial_state.mean()[0]
+            trk_msg.pose.pose.position.y = trk.spatial_state.mean()[1]
+            trk_msg.pose.pose.position.z = trk.spatial_state.mean()[2]
+            trk_msg.twist.twist.linear.x = trk.spatial_state.mean()[8]
+            trk_msg.twist.twist.linear.y = trk.spatial_state.mean()[9]
+            trk_msg.twist.twist.linear.z = trk.spatial_state.mean()[10]
 
-        # Add orientation
-        cr = np.cos(0.5*trk.spatial_state.mean()[6])
-        sr = np.sin(0.5*trk.spatial_state.mean()[6])
-        cp = np.cos(0.5*trk.spatial_state.mean()[7])
-        sp = np.sin(0.5*trk.spatial_state.mean()[7])
-        cy = np.cos(0.5*trk.spatial_state.mean()[8])
-        sy = np.sin(0.5*trk.spatial_state.mean()[8])
+            # compute orientation from rpy
+            cr = 1.
+            sr = 0.
+            cp = 1.
+            sp = 0.
+            cy = np.cos(0.5*trk.spatial_state.mean()[3])
+            sy = np.sin(0.5*trk.spatial_state.mean()[3])
+            trk_msg.pose.pose.orientation.w = cr*cp*cy + sr*sp*sy
+            trk_msg.pose.pose.orientation.x = sr*cp*cy - cr*sp*sy
+            trk_msg.pose.pose.orientation.y = cr*sp*cy + sr*cp*sy
+            trk_msg.pose.pose.orientation.z = cr*cp*sy - sr*sp*cy
+        
+            # TODO - add covariances 
+            # trk_msg.pose.covariance =        
+            # trk_msg.twist.covariance =
+            trk_msg.bbox.size.x = trk.spatial_state.mean()[4]
+            trk_msg.bbox.size.y = trk.spatial_state.mean()[5]
+            trk_msg.bbox.size.z =  trk.spatial_state.mean()[6]
 
-        trk_msg.pose.pose.orientation.w = cr*cp*cy + sr*sp*sy
-        trk_msg.pose.pose.orientation.x = sr*cp*cy - cr*sp*sy
-        trk_msg.pose.pose.orientation.y = cr*sp*cy + sr*cp*sy
-        trk_msg.pose.pose.orientation.z = cr*cp*sy - sr*sp*cy
-       
-        # TODO - add covariances 
-        # trk_msg.pose.covariance =        
-        # trk_msg.twist.covariance =
-        trk_msg.bbox.size.x = trk.spatial_state.mean()[12]
-        trk_msg.bbox.size.y = trk.spatial_state.mean()[13]
-        trk_msg.bbox.size.z =  trk.spatial_state.mean()[14]
+            trk_msg.track_confidence = trk.spatial_state.mean()[7] 
+        else:
+
+            # Add spatial information to message
+            trk_msg.pose.pose.position.x = trk.spatial_state.mean()[0]
+            trk_msg.pose.pose.position.y = trk.spatial_state.mean()[1]
+            trk_msg.pose.pose.position.z = trk.spatial_state.mean()[2]
+            trk_msg.twist.twist.linear.x = trk.spatial_state.mean()[3]
+            trk_msg.twist.twist.linear.y = trk.spatial_state.mean()[4]
+            trk_msg.twist.twist.linear.z = trk.spatial_state.mean()[5]
+
+            # Add orientation
+            cr = np.cos(0.5*trk.spatial_state.mean()[6])
+            sr = np.sin(0.5*trk.spatial_state.mean()[6])
+            cp = np.cos(0.5*trk.spatial_state.mean()[7])
+            sp = np.sin(0.5*trk.spatial_state.mean()[7])
+            cy = np.cos(0.5*trk.spatial_state.mean()[8])
+            sy = np.sin(0.5*trk.spatial_state.mean()[8])
+
+            trk_msg.pose.pose.orientation.w = cr*cp*cy + sr*sp*sy
+            trk_msg.pose.pose.orientation.x = sr*cp*cy - cr*sp*sy
+            trk_msg.pose.pose.orientation.y = cr*sp*cy + sr*cp*sy
+            trk_msg.pose.pose.orientation.z = cr*cp*sy - sr*sp*cy
+        
+            # TODO - add covariances 
+            # trk_msg.pose.covariance =        
+            # trk_msg.twist.covariance =
+            trk_msg.bbox.size.x = trk.spatial_state.mean()[12]
+            trk_msg.bbox.size.y = trk.spatial_state.mean()[13]
+            trk_msg.bbox.size.z =  trk.spatial_state.mean()[14]
     
         # Add semantic information to message
         trk_msg.class_confidence = float(trk.class_conf)
