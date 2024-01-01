@@ -11,7 +11,7 @@ compute_nuscenes_node:
     mcap_dir: '/home/jd/nuScenes/data/mcap'
     results_dir: '/home/jd/tracking_ws/src/ros_tracking/results'
     # dataset_name: 'v1.0-mini'
-    split_name: 'mini_train'
+    split_name: 'val'
     lidar_detector: 'megvii'
     track_topic: 'tracks'
     det_topic: '/detections'
@@ -123,16 +123,16 @@ tracker:
         spatial_states: 11
         spatial_meas: 8
         sensor_variance: # values from mini_train
-          pos: [.18, .21, .016, # barrier
-                .039,.046,.017, #bicycle
-                .30, .16, .088, # bus
-                .068, .081, .026, # car
-                .077, .10, .049, # construction vehicle
-                .045, .084, .021, # motorcycle
-                .031, .037, .020, # pedestrian
-                .073, .056, .0094, # traffic cone
-                .082, .041, .023, # trailer
-                .13, .098, .037] # truck
+          pos: [.195, .195, .0163, # barrier
+                .0423,.0424,.0169, #bicycle
+                .231, .231, .0878, # bus
+                .0747, .0747, .0262, # car
+                .0906, .0906, .0491, # construction vehicle
+                .0645, .0645, .0208, # motorcycle
+                .0341, .0341, .0203, # pedestrian
+                .0648, .0648, .00935, # traffic cone
+                .0615, .0615, .0230, # trailer
+                .115, .115, .0368] # truck
           yaw: [.079, # barrier
                 .075, # bicycle
                 .0015, # bus
