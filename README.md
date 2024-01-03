@@ -1,14 +1,35 @@
 # ros_tracking
-Multiobject Tracking for robots in ROS2. This is designed to be fast, accurate, modular, and reconfigurable. 
+Multiobject Tracking for robots in ROS2. This is designed to be fast, accurate, modular, reconfigurable, and capable of running on embedded hardware. 
 
 This package is under active development as part of my Ph.D. in robotics at UT Austin--if there is a feature you would like to see, please contact me or raise an issue!
 
 # Prerequisites
-This assumes you are using Ubuntu 22.04
+This assumes you are using Ubuntu 22.04 with ROS2 and `conda` installed. This was developed using ROS2 Iron, installed from binary using the instructions [here](https://docs.ros.org/en/iron/Installation/Ubuntu-Install-Debians.html#). 
 
+Note: Make sure that you deactivate any virtual environments before installing ROS2.
+
+## Tracing (Optional) 
+If you want to perform tracing analysis for performance or development purposes, you can verify that tracing is enabled by executing `ros2 run tracetools status` at a properly sourced terminal. Then, install `ros2_tracing`:
+```
+sudo apt-get install ros-iron-ros2trace
+```
 # Setup
 ## Clone the repo
-## Setting up the CONDA environment
+```
+cd ~
+mkdir -p tracking_ws/src && cd tracking_ws/src
+git clone https://github.com/roboav8r/ros_tracking.git
+cd tracking_ws/src
+rosdep install -i --from-path src --rosdistro iron -y
+```
+## Setting up the Conda environment
+Note: I use `mamba` as a personal preference, but it is a drop-in replacement to `conda`; either `mamba` or `conda` will work for these commands.
+```
+conda install mamba -c conda-forge
+mamba env create -f environment.yml
+mamba activate ros_tracking
+```
+
 ## Download nuScenes data (Optional)
 If you want to use the nuScenes dataset for tracking development and evaluation, follow these steps to download the dataset.
 
