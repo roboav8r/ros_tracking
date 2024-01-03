@@ -1,0 +1,14 @@
+det_converter:
+  tracker_frame: map # The frame to convert the detections to
+
+  detectors:
+    megvii:
+      frame:      map
+      topic:      /markers/detections/
+      msg_type:   /nuscenes/SceneEntity
+      det_type:   Detection3D
+      # confusion matrix
+      # sensor type
+      # sensor noise
+
+

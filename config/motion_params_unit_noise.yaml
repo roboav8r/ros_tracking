@@ -1,0 +1,184 @@
+human.pedestrian.adult:
+    default:
+        omegaz_mean: 0.0
+        omegaz_var: 0.0
+        vx_mean: -7.815970093361102e-14
+        vx_var: 1013.7979757228796
+        vy_mean: 6.927791673660977e-14
+        vy_var: 244.49062167783543
+        vz_mean: 0.09991367169708487
+        vz_var: 0.39659023808666183
+    pedestrian.moving:
+        omegaz_mean: -0.017503408396545996
+        omegaz_var: 1.5976938206521543
+        vx_mean: 1.1893421860118478
+        vx_var: 0.3493845548540412
+        vy_mean: 0.006007075112217132
+        vy_var: 0.047404759637401456
+        vz_mean: 0.026707740186293773
+        vz_var: 0.235504100997478
+    pedestrian.standing:
+        omegaz_mean: 0.02160706827289617
+        omegaz_var: 1.1576402158132335
+        vx_mean: 0.0009088345615109643
+        vx_var: 0.029834153286953113
+        vy_mean: 0.000793518443854007
+        vy_var: 0.03001903564741986
+        vz_mean: 0.016808625790556263
+        vz_var: 0.0862426519520566
+    type: dynamic
+human.pedestrian.construction_worker:
+    pedestrian.moving:
+        omegaz_mean: 0.0205612431377648
+        omegaz_var: 0.01988717751851533
+        vx_mean: -0.05687434843774567
+        vx_var: 0.06435509436572097
+        vy_mean: 0.08622330872649567
+        vy_var: 0.2627549020355487
+        vz_mean: -0.006744245846483046
+        vz_var: 0.09277354381758977
+    pedestrian.standing:
+        omegaz_mean: -0.0002695328284741749
+        omegaz_var: 0.007523667024018812
+        vx_mean: 0.014727208118669944
+        vx_var: 0.05890790143176429
+        vy_mean: 0.014262265880330197
+        vy_var: 0.062032971379281474
+        vz_mean: 0.013867753810819767
+        vz_var: 0.024856619372965502
+    type: dynamic
+movable_object.barrier:
+    default:
+        px_var: 0.0009171156563256157
+        py_var: 0.0031720214989580608
+        pz_var: 0.041303231199257204
+    type: static
+movable_object.debris:
+    default:
+        px_var: 0.009647928994082615
+        py_var: 0.0016951005917163488
+        pz_var: 0.002187562130177511
+    type: static
+movable_object.pushable_pullable:
+    default:
+        px_var: 0.0003556528925621124
+        py_var: 0.0011348780991749486
+        pz_var: 0.035857082644628085
+    type: static
+movable_object.trafficcone:
+    default:
+        px_var: 0.0022707322759421456
+        py_var: 0.002500784499213021
+        pz_var: 0.02044077933713115
+    type: static
+vehicle.bicycle:
+    cycle.with_rider:
+        omegaz_mean: 0.0
+        omegaz_var: 0.0
+        vx_mean: 0.012559087281667857
+        vx_var: 0.09312999153829464
+        vy_mean: 0.011044407622514931
+        vy_var: 0.42743841695477014
+        vz_mean: 0.040828028556646995
+        vz_var: 0.3688779425973503
+    cycle.without_rider:
+        omegaz_mean: -0.007087751552347337
+        omegaz_var: 0.10480255492153334
+        vx_mean: -0.004506540151397914
+        vx_var: 0.04861321633842087
+        vy_mean: 0.0014214184330224452
+        vy_var: 0.000233508179241769
+        vz_mean: 0.004783046266024584
+        vz_var: 0.03799917222400136
+    type: dynamic
+vehicle.bus.rigid:
+    type: dynamic
+    vehicle.stopped:
+        omegaz_mean: 0.0
+        omegaz_var: 0.0
+        vx_mean: 0.0
+        vx_var: 0.0
+        vy_mean: 0.0
+        vy_var: 0.0
+        vz_mean: 0.015512600089052378
+        vz_var: 3.2018671891767645
+vehicle.car:
+    type: dynamic
+    vehicle.moving:
+        omegaz_mean: -0.023187047786386496
+        omegaz_var: 2.7882903495108304
+        vx_mean: 4.709341767672024
+        vx_var: 22.166590472462165
+        vy_mean: 0.002876274736310262
+        vy_var: 7.5543228216929625
+        vz_mean: 0.031778540913574696
+        vz_var: 0.2321120467490711
+    vehicle.stopped:
+        omegaz_mean: -5.7858325313829735e-05
+        omegaz_var: 8.801437412523545e-07
+        vx_mean: 0.005534290789375526
+        vx_var: 0.06128159118106765
+        vy_mean: 0.012559473125403169
+        vy_var: 0.12696072220956542
+        vz_mean: 0.031534889783941936
+        vz_var: 0.2875756085720892
+vehicle.construction:
+    type: dynamic
+    vehicle.stopped:
+        omegaz_mean: 0.0
+        omegaz_var: 0.0
+        vx_mean: 0.0
+        vx_var: 0.0
+        vy_mean: 0.0
+        vy_var: 0.0
+        vz_mean: 0.015003875070908761
+        vz_var: 0.004641551768000782
+vehicle.motorcycle:
+    cycle.with_rider:
+        omegaz_mean: 0.0
+        omegaz_var: 0.0
+        vx_mean: -0.041401225256457015
+        vx_var: 4.05874897375436
+        vy_mean: 0.00361044132007243
+        vy_var: 0.052588420477778015
+        vz_mean: 0.06126749730647774
+        vz_var: 1.2075511891985817
+    cycle.without_rider:
+        omegaz_mean: 0.0
+        omegaz_var: 0.0
+        vx_mean: -3.3203793716360066e-05
+        vx_var: 4.241661274502433e-06
+        vy_mean: -0.0033561961635380933
+        vy_var: 0.04447732753534292
+        vz_mean: 0.005973049566876359
+        vz_var: 0.009274056996975597
+    type: dynamic
+vehicle.truck:
+    type: dynamic
+    vehicle.moving:
+        omegaz_mean: -0.041125423532598224
+        omegaz_var: 0.006497441521308371
+        vx_mean: 4.784337362820307
+        vx_var: 31.453454248027956
+        vy_mean: -0.15521941146039708
+        vy_var: 20.546512283554488
+        vz_mean: 0.08517249100821578
+        vz_var: 0.26750340230862957
+    vehicle.parked:
+        omegaz_mean: -0.0010178129391307533
+        omegaz_var: 0.0005272950781425567
+        vx_mean: -0.008703311112581128
+        vx_var: 0.3979381692895088
+        vy_mean: 0.03929044918233802
+        vy_var: 0.3330780946675496
+        vz_mean: 0.008756763857386626
+        vz_var: 0.6013923072740914
+    vehicle.stopped:
+        omegaz_mean: 0.0
+        omegaz_var: 0.0
+        vx_mean: -9.377673657549642e-06
+        vx_var: 0.010523776246379957
+        vy_mean: -0.00278848956904831
+        vy_var: 0.00016193755305031734
+        vz_mean: 0.015759677327542843
+        vz_var: 0.4677281702916958

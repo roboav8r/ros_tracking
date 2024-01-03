@@ -1,0 +1,95 @@
+# nuscenes_converter:
+#   ros__parameters:
+    # sensor_type: 'LinearGaussian'
+    # sensor_variance: [.25, .25, .1]
+    # dim_states: 6
+    # dim_meas: 3
+
+compute_nuscenes_node:
+  ros__parameters:
+    nuscenes_dir: '/home/jd/nuScenes/data'
+    mcap_dir: '/home/jd/nuscenes2mcap/mcap'
+    results_dir: '/home/jd/tracking_ws/src/ros_tracking/results'
+    # dataset_name: 'v1.0-mini'
+    split_name: 'val'
+    lidar_detector: 'megvii'
+    track_topic: 'tracks_scene'
+    det_topic: '/detections'
+
+tracker:
+  ros__parameters:
+    tracker:
+      dim_objects: 9
+      object_classes: ['false_detection',
+           'void_ignore',
+           'bicycle',
+           'bus',
+           'car',
+           'motorcycle',
+           'pedestrian',
+           'trailer',
+           'truck']
+      frame_id: 'map'
+      asgn_thresh: 4.0
+      trk_timeout: 1.5
+      publishers:
+        # names: ['track_pub', 'scene_pub']
+        names: ['scene_pub']
+        # track_pub: # Publisher name
+        #   pub_topic: 'tracks'
+        #   msg_type: 'Tracks3D'
+        #   routine: 'PublishTracks'
+        scene_pub: # Publisher name
+          pub_topic: 'tracks_scene'
+          msg_type: 'SceneUpdate'
+          routine: 'PublishScene'
+
+
+    sensors:
+
+      #Declare names of sensors upfront
+      sensor_names: ['nuscenes-megvii']
+
+      # For each named sensor, give sensor model information
+      nuscenes-megvii:
+        detector_index: 0
+        topic: 'converted_detections'
+        msg_type: 'Detections3D'
+        
+        # Spatial sensor model
+        spatial_sensor_model: [1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.,
+                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.,
+                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.]
+        spatial_states: 15
+        spatial_meas: 6
+        sensor_variance: [.25, .25, .1, .01, .01, .01]
+
+        # Semantic sensor model        
+        dim_classes: 9
+        dim_detections: 11
+        detection_classes: ['missed_detection',
+              'barrier',
+              'bicycle',
+              'bus',
+              'car',
+              'construction_vehicle',
+              'motorcycle',
+              'pedestrian',
+              'traffic_cone',
+              'trailer',
+              'truck']
+        # p(Z_label|X_class): 
+        # columns are dets: missed / barrier / bicycle / bus / car / construction_vehicle / motorcycle / pedestrian / traffic_cone / trailer / truck 
+        semantic_sensor_model: [0.4000, 0.125731, 0.083376,  0.038285,  0.217438, 0.061180, 0.068748, 0.117527, 0.090626, 0.088209,  0.108878, # false_det = nothing there
+                                0.096489, 0.498358, 0.010609,  0.002273,  0.025006, 0.042182, 0.006062, 0.020965, 0.282900, 0.009598,  0.005557, # void_ignore - barrier, construction_vehicle, traffic cone
+                                .2, 0., .75, 0., 0., 0., .05, 0., 0., 0., 0., # bicycle - 20% missed chance, 5% misclassification chance
+                                .2, 0., 0., .65, .0, .05, .0, .0, .0, .05, .05, # bus
+                                0.222530,  0.007325,  0.006533,  0.007127,  0.657494, 0.007721, 0.010493, 0.005543, 0.003168, 0.004158, 0.067907, # car
+                                .2, 0., .05, 0., 0., 0., .75, 0., 0., 0., 0., # motorcycle
+                                .2, 0., 0., 0., 0., 0., 0., .8, 0., 0., 0., # pedestrian
+                                .2, 0., 0., .05, 0., .05, 0., 0., 0., .65, .05, # trailer
+                                .2, 0., 0., .05, .05, .05, 0., 0., 0., .05, .6] # truck
+        
