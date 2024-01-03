@@ -65,25 +65,25 @@ tracker:
         model_type: 'ab3dmot'
         proc_var: [.01, .01, .01, .1, .1, .1, .1, .1, 0., 0., 0.]
       bicycle:
-        model_type: 'ackermann'
+        model_type: 'ab3dmot'
         proc_var: [.2, .2, .2, .2, .2, .2, .2, .2, 0., 0., 0.]
       bus:
-        model_type: 'ackermann'
+        model_type: 'ab3dmot'
         proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
       car:
-        model_type: 'ackermann'
+        model_type: 'ab3dmot'
         proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
       motorcycle:
-        model_type: 'ackermann'
+        model_type: 'ab3dmot'
         proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
       pedestrian:
         model_type: 'ab3dmot'
         proc_var: [.05, .05, .05, .05, .05, .05, .05, .05, 0., 0., 0.]
       trailer:
-        model_type: 'ackermann'
+        model_type: 'ab3dmot'
         proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
       truck:
-        model_type: 'ackermann'
+        model_type: 'ab3dmot'
         proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
 
         # proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
