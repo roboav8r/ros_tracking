@@ -65,6 +65,9 @@ class NuScenesToMcap():
             val_det_path = os.path.join(self.nuscenes_dir,'detection-' + self.lidar_detector, self.lidar_detector + '_val.json')
             self.lidar_dets.update(json.load(open(val_det_path))['results'])
 
+        elif self.split_name in ['test']:
+            train_det_path = os.path.join(self.nuscenes_dir,'detection-' + self.lidar_detector, self.lidar_detector + '_test.json')
+            self.lidar_dets = json.load(open(train_det_path))['results']
 
         # If output directory doesn't exist, create it
         if not os.path.exists(self.mcap_dir):

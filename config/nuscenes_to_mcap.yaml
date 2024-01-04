@@ -1,7 +1,0 @@
-nuscenes_to_mcap:
-  ros__parameters:
-    nuscenes_dir: '/home/jd/nuScenes/data'
-    mcap_dir: '/home/jd/nuScenes/data/mcap'
-    lidar_detector: 'megvii'
-    dataset: 'v1.0-trainval'
-    split_name: 'val'
