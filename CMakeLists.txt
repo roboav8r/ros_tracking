@@ -20,6 +20,7 @@ install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
 ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/nuscenes_to_mcap.py
+  scripts/run_nuscenes_experiments.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
