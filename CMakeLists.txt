@@ -32,7 +32,6 @@ include_directories(${GTSAM_INCLUDE_DIR})
 
 add_executable(det_converter src/det_converter.cpp)
 ament_target_dependencies(det_converter rclcpp foxglove_msgs tracking_msgs)
-
 add_executable(depthai_converter src/depthai_converter.cpp)
 ament_target_dependencies(depthai_converter rclcpp vision_msgs geometry_msgs tracking_msgs tf2 tf2_ros tf2_geometry_msgs)
 
