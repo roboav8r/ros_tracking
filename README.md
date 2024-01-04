@@ -100,6 +100,7 @@ At this point, you can remove the .zip and .tgz files if you'd like.
 # Usage
 ## Development using nuScenes data (Optional)
 If you want to use the nuScenes dataset and evaluation scripts to develop the tracker, complete the following steps:
+
 1) Convert nuscenes detection and data to ROS2 .mcap files. In the `ros_tracking` directory:
 ```
 python3 scripts/nuscenes_to_mcap.py # Converts mini_train by default
@@ -108,8 +109,12 @@ python3 scripts/nuscenes_to_mcap.py -d v1.0-trainval -s train # Converts the tra
 python3 scripts/nuscenes_to_mcap.py -d v1.0-trainval -s val # Converts the validation split from the main dataset
 python3 scripts/nuscenes_to_mcap.py -d v1.0-test -s test # Converts the test split from the main dataset
 ```
-2) Re-index and save nuScenes annotations.
-By default, the nuScenes ground truth annotations are indexed by split > scene > sample (frame) > annotation (object instance). However, to learn the motion model parameters, the ground truth annotations should be indexed by split > scene > annotation (object instance) > sample (frame) , so that the state of the object can be observed as it progresses through each sample frame. 
+## Generate sensor and motion model parameters (Optional)
+
+## Run experiments
+The output of each experiment is a results.json file. We have included severa
+
+## Evaluate experimental results
 
 # Acknowledgements
 The nuScenes `.mcap` conversion script is a modified version of the original, available [here](https://github.com/foxglove/nuscenes2mcap). While the original Foxglove version uses protobuf serialization, the [included file](scripts/nuscenes_to_mcap.py) uses Foxglove's ROS2 serialization, with the same datatypes. 
