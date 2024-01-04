@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import math
 import json
 from typing import Dict, Tuple
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
@@ -14,9 +16,6 @@ from nuscenes.nuscenes import NuScenes
 from nuscenes.map_expansion.map_api import NuScenesMap
 import nuscenes.utils.splits as nuscenes_splits
 from nuscenes.eval.common.utils import quaternion_yaw
-
-import rclpy
-from rclpy.node import Node
 
 import rosbag2_py
 from rclpy.serialization import serialize_message
@@ -32,22 +31,14 @@ REFERENCE_COORDINATES = {
     "singapore-queenstown": [1.2782562240223188, 103.76741409301758],
 }
 
-class NuScenesToMcap(Node):
-    def __init__(self):
-        super().__init__('nuscenes_to_mcap')
+class NuScenesToMcap():
+    def __init__(self,args):
 
-        # Get parameters from yaml file
-        self.declare_parameter('nuscenes_dir', rclpy.Parameter.Type.STRING )
-        self.declare_parameter('mcap_dir', rclpy.Parameter.Type.STRING )
-        self.declare_parameter('lidar_detector', rclpy.Parameter.Type.STRING)
-        self.declare_parameter('dataset', rclpy.Parameter.Type.STRING)
-        self.declare_parameter('split_name', rclpy.Parameter.Type.STRING)
-
-        self.nuscenes_dir = self.get_parameter('nuscenes_dir').get_parameter_value().string_value
-        self.mcap_dir = self.get_parameter('mcap_dir').get_parameter_value().string_value
-        self.lidar_detector = self.get_parameter('lidar_detector').get_parameter_value().string_value
-        self.dataset = self.get_parameter('dataset').get_parameter_value().string_value
-        self.split_name = self.get_parameter('split_name').get_parameter_value().string_value
+        self.nuscenes_dir = args.nuscenes_dir
+        self.mcap_dir = args.mcap_dir
+        self.lidar_detector = args.lidar_det
+        self.dataset = args.dataset
+        self.split_name = args.split
 
         self.lidar_det_string = "-" + self.lidar_detector if self.lidar_detector else ""
 
@@ -351,13 +342,13 @@ class NuScenesToMcap(Node):
     def convert_split(self):
 
         for scene in self.split: # for scene in split
-            self.get_logger().info("Converting %s" % (scene))
+            print("Converting %s" % (scene))
 
             file_root = "%s%s" % (scene, self.lidar_det_string)
 
             # Check if file exists
             if os.path.exists(os.path.join(self.mcap_dir, file_root, file_root + '_0.mcap')):
-                self.get_logger().info('%s MCAP already exists. Continuing.' % scene)
+                print('%s MCAP already exists. Continuing.' % scene)
                 continue
 
             else:
@@ -594,23 +585,48 @@ class NuScenesToMcap(Node):
 
         # Close writer
         del writer
-        self.get_logger().info("Finished writing %s" % os.path.join(self.mcap_dir, file_root))
-
-
-
+        print("Finished writing %s" % os.path.join(self.mcap_dir, file_root))
 
 def main(args=None):
-    rclpy.init(args=args)
+    parser = argparse.ArgumentParser()
+    home_dir = Path.home()
+    parser.add_argument(
+        "--nuscenes-dir",
+        "-n",
+        default=home_dir / "nuscenes",
+        help="Path to nuscenes data directory (input)",
+    )
+    parser.add_argument(
+        "--mcap-dir",
+        "-m",
+        default=home_dir / "nuscenes/mcap",
+        help="Path to mcap directory (output)",
+    )
+    parser.add_argument(
+        "--lidar-det",
+        "-l",
+        default="megvii",
+        help="3D LiDAR detector name, if used",
+    )
+    parser.add_argument(
+        "--dataset",
+        "-d",
+        default="v1.0-mini",
+        help="NuScenes dataset: v1.0-mini, v1.0-trainval, v1.0-test",
+    )
+    parser.add_argument(
+        "--split",
+        "-s",
+        default="mini_train",
+        help="NuScenes dataset split: mini_train, mini_val, train, val, test",
+    )
+    args = parser.parse_args()
 
     # Initialize converter object
-    nuscenes_to_mcap = NuScenesToMcap()
+    nuscenes_to_mcap = NuScenesToMcap(args)
 
     # Run conversion routine
     nuscenes_to_mcap.convert_split()
-
-    nuscenes_to_mcap.destroy_node()
-    rclpy.shutdown()
-
 
 if __name__ == "__main__":
     main()
