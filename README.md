@@ -23,9 +23,8 @@ cd tracking_ws/src
 rosdep install -i --from-path src --rosdistro iron -y
 ```
 ## Setting up the Conda environment
-Note: I use `mamba` as a personal preference, but it is a drop-in replacement to `conda`; either `mamba` or `conda` will work for these commands.
+Note: I use [`mamba`](https://github.com/conda-forge/miniforge) as a personal preference, but it is a drop-in replacement to `conda`; either `mamba` or `conda` will work for these commands.
 ```
-conda install mamba -c conda-forge
 mamba env create -f environment.yml
 mamba activate ros_tracking
 ```
@@ -40,7 +39,7 @@ cd ~
 mkdir nuscenes
 cd nuscenes
 ```
-4) At the [downloads section of the nuScenes page](https://www.nuscenes.org/nuscenes#download), download the US versions of the Mini, Trainval, and Test Metadata and file blobs.
+4) At the [downloads section of the nuScenes page](https://www.nuscenes.org/nuscenes#download), download the US versions of the Mini, Trainval, and Test Metadata and file blobs. Also, download the Map expansion v1.3.
 
   NOTE: If using a headless display (e.g. a server), you can use wget to download the files as described [here](https://github.com/nutonomy/nuscenes-devkit/issues/110). An example command format is provided below:
   ```
@@ -48,6 +47,7 @@ cd nuscenes
   ```
 Upon completion, you should have the following files in your `~/nuscenes` directory:
 ```
+nuScenes-map-expansion-v1.3.zip
 v1.0-mini.tgz
 v1.0-test_blobs.tgz
 v1.0-test_meta.tgz
@@ -72,8 +72,12 @@ tar -xvf v1.0-trainval01_blobs.tgz
 ...
 tar -xvf v1.0-trainval_meta.tgz
 ```
+6) Unzip the map expansion data into the `maps` folder:
+```
+unzip nuScenes-map-expansion-v1.3.zip -d maps
+```
 
-6) Download and extract the megvii detector data:
+7) Download and unzip the megvii detector:
 ```
 wget https://www.nuscenes.org/data/detection-megvii.zip
 unzip detection-megvii.zip -d detection-megvii
@@ -96,8 +100,18 @@ At this point, you can remove the .zip and .tgz files if you'd like.
 # Usage
 ## Development using nuScenes data (Optional)
 If you want to use the nuScenes dataset and evaluation scripts to develop the tracker, complete the following steps:
-1) Convert nuscenes detection and data to ROS2 .mcap files.
+1) Convert nuscenes detection and data to ROS2 .mcap files. In the `ros_tracking` directory:
+```
+python3 scripts/nuscenes_to_mcap.py # Converts mini_train by default
+python3 scripts/nuscenes_to_mcap.py -s mini_val # Converts the mini_val split
+python3 scripts/nuscenes_to_mcap.py -d v1.0-trainval -s train # Converts the training split from the main dataset
+python3 scripts/nuscenes_to_mcap.py -d v1.0-trainval -s val # Converts the validation split from the main dataset
+python3 scripts/nuscenes_to_mcap.py -d v1.0-test -s test # Converts the test split from the main dataset
+```
 2) Re-index and save nuScenes annotations.
 By default, the nuScenes ground truth annotations are indexed by split > scene > sample (frame) > annotation (object instance). However, to learn the motion model parameters, the ground truth annotations should be indexed by split > scene > annotation (object instance) > sample (frame) , so that the state of the object can be observed as it progresses through each sample frame. 
-3) 
-## 
+
+# Acknowledgements
+The nuScenes `.mcap` conversion script is a modified version of the original, available [here](https://github.com/foxglove/nuscenes2mcap). While the original Foxglove version uses protobuf serialization, the [included file](scripts/nuscenes_to_mcap.py) uses Foxglove's ROS2 serialization, with the same datatypes. 
+
+
