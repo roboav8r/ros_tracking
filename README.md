@@ -19,7 +19,7 @@ sudo apt-get install ros-iron-ros2trace
 cd ~
 mkdir -p tracking_ws/src && cd tracking_ws/src
 git clone https://github.com/roboav8r/ros_tracking.git
-cd tracking_ws/src
+cd tracking_ws
 rosdep install -i --from-path src --rosdistro iron -y
 ```
 ## Setting up the Conda environment
