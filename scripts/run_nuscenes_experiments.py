@@ -119,6 +119,7 @@ class NuscenesExpManager(Node):
                 self.get_logger().info("Computing tracking results for scene %s" % (scene))
 
                 # Load .mcap file for this scene
+                self.get_logger().info("Loading %s/%s%s/%s%s_0.mcap" % (self.mcap_dir, scene, self.lidar_det_string, scene, self.lidar_det_string))
                 storage_options = rosbag2_py.StorageOptions(
                     uri="%s/%s%s/%s%s_0.mcap" % (self.mcap_dir, scene, self.lidar_det_string, scene, self.lidar_det_string),
                     storage_id='mcap')
