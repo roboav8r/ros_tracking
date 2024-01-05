@@ -13,7 +13,13 @@ def generate_launch_description():
         'config',
         'experiments.yaml'
         )
-    
+    def_config = os.path.join(
+        get_package_share_directory('ros_tracking'),
+        'config',
+        'default_nuscenes.yaml'
+    )
+
+
     # trace = Trace(
     #     session_name="nuscenes_tracing",
     # )
@@ -28,5 +34,16 @@ def generate_launch_description():
         parameters=[exp_config]
     )
     ld.add_action(comp_node)
+
+    # Tracker node
+    trk_node = Node(
+        package='ros_tracking',
+        executable='py_tracker.py',
+        name='tracker',
+        output='screen',
+        remappings=[('/detections','/converted_detections')],
+        parameters=[def_config]
+    )
+    ld.add_action(trk_node)
 
     return ld

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
+import os
 import json
+import subprocess
 from pathlib import Path
+
+from ament_index_python.packages import get_package_share_directory
 
 import rclpy
 from rclpy.node import Node
@@ -9,6 +13,8 @@ from rclpy.node import Node
 import rosbag2_py
 import nuscenes.utils.splits as nuscenes_splits
     
+from std_srvs.srv import Empty
+
 class NuscenesExpManager(Node):
     def __init__(self):
         super().__init__('nusc_exp_mgr_node')
@@ -25,12 +31,20 @@ class NuscenesExpManager(Node):
         self.val_split = self.get_parameter('val_split').get_parameter_value().string_value
         self.mcap_dir = Path.home() / self.get_parameter('mcap_dir').get_parameter_value().string_value
         self.results_dir = Path.home() / self.get_parameter('results_dir').get_parameter_value().string_value
+        self.package_dir = get_package_share_directory('ros_tracking')
 
         # Create ROS objects
+        self.reset_tracker_client = self.create_client(Empty, "reset_tracker")
+        self.reconf_tracker_client = self.create_client(Empty, "reconfigure_tracker")
+        self.empty_req = Empty.Request()
         self.reader = rosbag2_py.SequentialReader()
     
         # Create member variables
         self.results_dict = dict()
+
+        # If results directory doesn't exist, create it
+        if not os.path.exists(self.results_dir):
+            os.mkdir(self.results_dir)
 
     def add_result_metadata(self):
         self.results_dict["meta"] = dict()
@@ -46,7 +60,17 @@ class NuscenesExpManager(Node):
         # Reconfigure tracker
         for exp in self.exp_configs:
 
-            self.get_logger().info("Loading tracker experiment configuration: %s" % (exp))
+            # Load the experimental configuration for the tracker
+            exp_path = os.path.join(self.package_dir,exp)
+            exp_name = os.path.splitext(os.path.split(exp_path)[-1])[0]
+            self.get_logger().info("Loading tracker experiment configuration: %s" % (exp_name))
+            subprocess.run(["ros2","param", "load", "/tracker", os.path.join(self.package_dir,exp_path)])
+            
+            # Reset & reconfigure tracker
+            self.future = self.reset_tracker_client.call_async(self.empty_req)
+            rclpy.spin_until_future_complete(self, self.future)
+            self.future = self.reconf_tracker_client.call_async(self.empty_req)
+            rclpy.spin_until_future_complete(self, self.future)
 
             # Initialize results
             self.results_dict = dict()
@@ -57,7 +81,7 @@ class NuscenesExpManager(Node):
             # Write to results dict
 
             # Write results to json file
-            with open(self.results_dir / "_".join([exp, "results.json"]), "w") as outfile:
+            with open(self.results_dir / "_".join([exp_name, "results.json"]), "w") as outfile:
                 json.dump(self.results_dict, outfile, indent=2)
 
 

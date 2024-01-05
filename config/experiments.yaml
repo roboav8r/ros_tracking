@@ -1,6 +1,6 @@
 nusc_exp_mgr_node:
   ros__parameters:
-    exp_configs: ['e0_ab3dmot_baseline']
+    exp_configs: ['config/e0_ab3dmot_baseline.yaml']
     val_dataset: 'v1.0-mini'
     val_split: 'mini_val'
     mcap_dir: 'nuscenes/data' # relative to home directory
