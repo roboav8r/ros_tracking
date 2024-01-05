@@ -14,7 +14,6 @@ find_package(std_msgs REQUIRED)
 find_package(foxglove_msgs REQUIRED)
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
-install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
 
 # Install Python
 ament_python_install_package(${PROJECT_NAME})
