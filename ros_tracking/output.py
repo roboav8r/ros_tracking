@@ -2,10 +2,10 @@ import numpy as np
 
 from tracking_msgs.msg import Track3D, Tracks3D
 from foxglove_msgs.msg import SceneEntity, SceneUpdate, ArrowPrimitive, CubePrimitive, TextPrimitive, KeyValuePair
-from diagnostic_msgs.msg import KeyValue
-
 
 def PublishTracks(tracker, pub_name):
+    tracker.get_logger().info("Publishing tracks")
+
     tracker.trks_msg = Tracks3D()
     tracker.trks_msg.header.frame_id = tracker.frame_id
     tracker.trks_msg.header.stamp = tracker.dets_msg.header.stamp

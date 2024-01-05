@@ -9,11 +9,15 @@ from ament_index_python.packages import get_package_share_directory
 
 import rclpy
 from rclpy.node import Node
+from rclpy.serialization import deserialize_message
+from rclpy.wait_for_message import wait_for_message
 
 import rosbag2_py
 import nuscenes.utils.splits as nuscenes_splits
+from rosidl_runtime_py.utilities import get_message
 
 from foxglove_msgs.msg import SceneUpdate, SceneEntity
+from tracking_msgs.msg import Detections3D, Tracks3D
 from std_srvs.srv import Empty
 
 class NuscenesExpManager(Node):
@@ -27,6 +31,7 @@ class NuscenesExpManager(Node):
         self.declare_parameter('mcap_dir', rclpy.Parameter.Type.STRING )
         self.declare_parameter('results_dir', rclpy.Parameter.Type.STRING )
         self.declare_parameter('det_topic', rclpy.Parameter.Type.STRING)
+        self.declare_parameter('track_topic', rclpy.Parameter.Type.STRING)
         self.declare_parameter('lidar_detector', rclpy.Parameter.Type.STRING)
         
         self.exp_configs = self.get_parameter('exp_configs').get_parameter_value().string_array_value
@@ -35,6 +40,7 @@ class NuscenesExpManager(Node):
         self.mcap_dir = Path.home() / self.get_parameter('mcap_dir').get_parameter_value().string_value
         self.results_dir = Path.home() / self.get_parameter('results_dir').get_parameter_value().string_value
         self.det_topic = self.get_parameter('det_topic').get_parameter_value().string_value
+        self.track_topic = self.get_parameter('track_topic').get_parameter_value().string_value
         self.lidar_detector = self.get_parameter('lidar_detector').get_parameter_value().string_value
 
         # Non-ros parameters
@@ -119,7 +125,6 @@ class NuscenesExpManager(Node):
                 self.get_logger().info("Computing tracking results for scene %s" % (scene))
 
                 # Load .mcap file for this scene
-                self.get_logger().info("Loading %s/%s%s/%s%s_0.mcap" % (self.mcap_dir, scene, self.lidar_det_string, scene, self.lidar_det_string))
                 storage_options = rosbag2_py.StorageOptions(
                     uri="%s/%s%s/%s%s_0.mcap" % (self.mcap_dir, scene, self.lidar_det_string, scene, self.lidar_det_string),
                     storage_id='mcap')
@@ -139,6 +144,21 @@ class NuscenesExpManager(Node):
                 self.future = self.reset_tracker_client.call_async(self.empty_req)
                 rclpy.spin_until_future_complete(self, self.future)
 
+                # Process detection messages and format tracking results
+                while self.reader.has_next():
+                    topic, data, _ = self.reader.read_next()
+
+                    if topic==self.det_topic:
+                        msg_type = get_message(typename(topic))
+                        msg = deserialize_message(data, msg_type)
+
+                        # Send the detection message
+                        self.get_logger().info("Sending message")
+                        self.publisher.publish(msg)
+
+                        # wait for the track response from the tracker
+                        ret, trk_msg = wait_for_message(Tracks3D, self, self.track_topic)
+                        self.tracker_callback(trk_msg)
 
 
             # Write to results dict
