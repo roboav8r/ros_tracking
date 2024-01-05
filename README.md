@@ -109,10 +109,17 @@ python3 scripts/nuscenes_to_mcap.py -d v1.0-trainval -s train # Converts the tra
 python3 scripts/nuscenes_to_mcap.py -d v1.0-trainval -s val # Converts the validation split from the main dataset
 python3 scripts/nuscenes_to_mcap.py -d v1.0-test -s test # Converts the test split from the main dataset
 ```
+
+2) If you'd like to compute motion model params, then convert the nuscenes annotations into a re-indexed `.json` format using the included script:
+```
+python3 scripts/nuscenes_ann_to_json.py # Converts nuscenes mini_train split to .json
+python3 scripts/nuscenes_ann_to_json.py -d v1.0-trainval -s train # Converts nuscenes train split to .json
+```
+The results from this will be stored in the nuscenes directory in a created annotations folder, e.g. `~/nuscenes/annotations/mini_train.json`
 ## Generate sensor and motion model parameters (Optional)
 
 ## Run experiments
-The output of each experiment is a results.json file. We have included severa
+The output of each experiment is a results.json file.
 
 ## Evaluate experimental results
 
