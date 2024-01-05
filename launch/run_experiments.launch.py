@@ -35,6 +35,15 @@ def generate_launch_description():
     )
     ld.add_action(comp_node)
 
+    # Detection conversion node
+    det_node = Node(
+        package='ros_tracking',
+        executable='nuscenes_converter',
+        name='nuscenes_converter',
+        remappings=[('/nuscenes_detections','/detections' )]
+    )
+    ld.add_action(det_node)
+
     # Tracker node
     trk_node = Node(
         package='ros_tracking',

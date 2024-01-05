@@ -5,16 +5,27 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+# Find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(foxglove_msgs REQUIRED)
+find_package(tracking_msgs REQUIRED)
+find_package(diagnostic_msgs REQUIRED)
 
+# Install launch and config files
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME}/)
+
+# Add and install CPP targets
+add_executable(nuscenes_converter src/nuscenes_converter.cpp)
+ament_target_dependencies(nuscenes_converter rclcpp foxglove_msgs tracking_msgs diagnostic_msgs)
+install(TARGETS 
+  nuscenes_converter
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 # Install Python
 ament_python_install_package(${PROJECT_NAME})
