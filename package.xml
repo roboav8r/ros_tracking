@@ -20,6 +20,8 @@
   <depend> rclcpp </depend>
   <depend> rclpy </depend>
   <depend> std_msgs </depend>
+  <depend> tracetools_launch </depend>
+  <depend> gtsam </depend>
 
   <depend> foxglove_msgs </depend>
 
