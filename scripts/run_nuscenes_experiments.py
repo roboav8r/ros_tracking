@@ -2,7 +2,6 @@
 
 import os
 import json
-import time
 import subprocess
 from pathlib import Path
 
@@ -58,7 +57,6 @@ class NuscenesExpManager(Node):
     
         # Create member variables
         self.results_dict = dict()
-        self.times = []
         self.msg_count=0
 
         # If results directory doesn't exist, create it
@@ -68,7 +66,6 @@ class NuscenesExpManager(Node):
     def tracker_callback(self, msg):
         self.msg_count+=1
         self.get_logger().info("Tracker msg #%d received" % self.msg_count)
-        self.get_logger().info("CALLBACK: has %i tracks\n" % (len(msg.tracks)))
 
         for kv in msg.metadata:
             if kv.key == "sample_token":
@@ -161,21 +158,12 @@ class NuscenesExpManager(Node):
                         msg = deserialize_message(data, msg_type)
 
                         # Send the detection message
-                        self.get_logger().info("Sending message")
                         self.publisher.publish(msg)
 
                         # wait for the track response from the tracker
-                        tic = time.process_time()
-                        self.get_logger().info("about to wait for msg")
                         ret, trk_msg = wait_for_message(Tracks3D, self, self.track_topic)
-                        toc = time.process_time()
-                        self.times.append(toc-tic)
                         if ret:
                             self.tracker_callback(trk_msg)
-                        self.get_logger().info("End of message handling")
-
-
-            # Write to results dict
 
             # Write results to json file
             with open(self.results_dir / "_".join([exp_name, "results.json"]), "w") as outfile:
