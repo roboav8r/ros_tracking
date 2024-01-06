@@ -2,6 +2,7 @@
 
 import os
 import json
+import time
 import subprocess
 from pathlib import Path
 
@@ -57,6 +58,8 @@ class NuscenesExpManager(Node):
     
         # Create member variables
         self.results_dict = dict()
+        self.times = []
+        self.msg_count=0
 
         # If results directory doesn't exist, create it
         if not os.path.exists(self.results_dir):
@@ -115,7 +118,11 @@ class NuscenesExpManager(Node):
             self.future = self.reconf_tracker_client.call_async(self.empty_req)
             rclpy.spin_until_future_complete(self, self.future)
 
-            # Initialize results
+            # Setup subscriber
+            ret, trk_msg = wait_for_message(Tracks3D, self, self.track_topic,1)
+
+            # Initialize variables
+            self.msg_count=0
             self.results_dict = dict()
             self.add_result_metadata()
 
@@ -149,6 +156,7 @@ class NuscenesExpManager(Node):
                     topic, data, _ = self.reader.read_next()
 
                     if topic==self.det_topic:
+
                         msg_type = get_message(typename(topic))
                         msg = deserialize_message(data, msg_type)
 
@@ -157,8 +165,14 @@ class NuscenesExpManager(Node):
                         self.publisher.publish(msg)
 
                         # wait for the track response from the tracker
+                        tic = time.process_time()
+                        self.get_logger().info("about to wait for msg")
                         ret, trk_msg = wait_for_message(Tracks3D, self, self.track_topic)
-                        self.tracker_callback(trk_msg)
+                        toc = time.process_time()
+                        self.times.append(toc-tic)
+                        if ret:
+                            self.tracker_callback(trk_msg)
+                        self.get_logger().info("End of message handling")
 
 
             # Write to results dict
@@ -173,8 +187,6 @@ def main(args=None):
 
     # Create experiment manager
     nusc_exp_mgr = NuscenesExpManager()
-
-    # Run nuScenes experiments
     nusc_exp_mgr.run_experiments()
 
     # Shut down the node
