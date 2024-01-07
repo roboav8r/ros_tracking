@@ -1,8 +1,8 @@
 nusc_exp_mgr_node:
   ros__parameters:
-    exp_configs: ['config/e0_ab3dmot_baseline.yaml']
-    val_dataset: 'v1.0-trainval'
-    val_split: 'val'
+    exp_configs: ['config/e0_ab3dmot_baseline.yaml','config/e1_ab3dmot_proc_heuristic.yaml','config/e2_ab3dmot_proc_heuristic_sens_mini.yaml']
+    val_dataset: 'v1.0-mini'
+    val_split: 'mini_val'
     mcap_dir: 'nuscenes/mcap' # relative to home directory
     results_dir: 'tracking_ws/src/ros_tracking/results' # relative to home directory
     det_topic: '/detections'
