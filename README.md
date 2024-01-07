@@ -25,7 +25,7 @@ rosdep install -i --from-path src --rosdistro iron -y
 ## Setting up the Conda environment
 Note: I use [`mamba`](https://github.com/conda-forge/miniforge) as a personal preference, but it is a drop-in replacement to `conda`; either `mamba` or `conda` will work for these commands.
 ```
-mamba env create -f environment.yml
+mamba env create -f tracking_env.yml
 mamba activate ros_tracking
 ```
 
@@ -112,6 +112,6 @@ python3 scripts/nuscenes_to_mcap.py -d v1.0-test -s test # Converts the test spl
 By default, the nuScenes ground truth annotations are indexed by split > scene > sample (frame) > annotation (object instance). However, to learn the motion model parameters, the ground truth annotations should be indexed by split > scene > annotation (object instance) > sample (frame) , so that the state of the object can be observed as it progresses through each sample frame. 
 
 # Acknowledgements
-The nuScenes `.mcap` conversion script is a modified version of the original, available [here](https://github.com/foxglove/nuscenes2mcap). While the original Foxglove version uses protobuf serialization, the [included file](scripts/nuscenes_to_mcap.py) uses Foxglove's ROS2 serialization, with the same datatypes. 
+The nuScenes `.mcap` conversion script is a modified version of the original from Foxglove, available [here](https://github.com/foxglove/nuscenes2mcap). While the original Foxglove version uses protobuf serialization, the [included file](scripts/nuscenes_to_mcap.py) uses Foxglove's ROS2 serialization, with the same datatypes. 
 
-
+The [tracking evaluation script](scripts/evaluate.py) is copied from Nutonomy's nuScenes devkit repo [here](https://github.com/nutonomy/nuscenes-devkit/tree/master/python-sdk/nuscenes/eval/tracking) for convenience.
