@@ -34,28 +34,28 @@ tracker:
            'truck']
       void_ignore:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [.01, .01, .01, .1, .1, .1, .1, .1, 0., 0., 0.]
       bicycle:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [.2, .2, .2, .2, .2, .2, .2, .2, 0., 0., 0.]
       bus:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
       car:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
       motorcycle:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
       pedestrian:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [.05, .05, .05, .05, .05, .05, .05, .05, 0., 0., 0.]
       trailer:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
       truck:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [.15, .15, .15, .15, .15, .15, .15, .15, 0., 0., 0.]
 
     sensors:
 
@@ -92,36 +92,36 @@ tracker:
         spatial_states: 11
         spatial_meas: 8
         sensor_variance: # values from mini_train
-          pos: [10., 10., 10., # barrier
-                10., 10., 10., #bicycle
-                10., 10., 10., # bus
-                10., 10., 10., # car
-                10., 10., 10., # construction vehicle
-                10., 10., 10., # motorcycle
-                10., 10., 10., # pedestrian
-                10., 10., 10., # traffic cone
-                10., 10., 10., # trailer
-                10., 10., 10.] # truck
-          yaw: [10., # barrier
-                10., # bicycle
-                10., # bus
-                10., # car
-                10., # construction_vehicle
-                10., # motorcycle
-                10., # pedestrian
-                10., # traffic cone
-                10., # trailer
-                10.] # truck
-          size: [10., 10., 10., # barrier
-                10., 10., 10., #bicycle
-                10., 10., 10., # bus
-                10., 10., 10., # car
-                10., 10., 10., # construction vehicle
-                10., 10., 10., # motorcycle
-                10., 10., 10., # pedestrian
-                10., 10., 10., # traffic cone
-                10., 10., 10., # trailer
-                10., 10., 10.] # truck
+          pos: [.195, .195, .0163, # barrier
+                .0423,.0424,.0169, #bicycle
+                .231, .231, .0878, # bus
+                .0747, .0747, .0262, # car
+                .0906, .0906, .0491, # construction vehicle
+                .0645, .0645, .0208, # motorcycle
+                .0341, .0341, .0203, # pedestrian
+                .0648, .0648, .00935, # traffic cone
+                .0615, .0615, .0230, # trailer
+                .115, .115, .0368] # truck
+          yaw: [.079, # barrier
+                .075, # bicycle
+                .0015, # bus
+                .21, # car
+                .50, # construction_vehicle
+                .037, # motorcycle
+                .36, # pedestrian
+                .39, # traffic cone
+                .018, # trailer
+                .31] # truck
+          size: [.076,.098,.019, # barrier
+                 .031, .0098, .018, # bicycle
+                 1.1, .043, .061, # bus
+                 .076, .017, .018, # car
+                 1.4, .18, .17, # construction_vehicle
+                 .042, .025, .0068, # motorcycle
+                 .025, .011, .011, # pedestrian
+                 .019, .093, .012, # traffic cone
+                 .11, .071, .038, # trailer
+                 .59, .044, .046] # truck
           conf: [.01, # barrier
                 .01, # bicycle
                 .01, # bus
