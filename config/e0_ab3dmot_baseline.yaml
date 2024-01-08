@@ -34,28 +34,28 @@ tracker:
            'truck']
       void_ignore:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1, 0.1]
       bicycle:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1, 0.1]
       bus:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1, 0.1]
       car:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1, 0.1]
       motorcycle:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1, 0.1]
       pedestrian:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1, 0.1]
       trailer:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1, 0.1]
       truck:
         model_type: 'ab3dmot'
-        proc_var: [.1, .1, .1, .1, .1, .1, .1, .1, 0., 0., 0.]
+        proc_var: [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1, 0.1]
 
     sensors:
 
