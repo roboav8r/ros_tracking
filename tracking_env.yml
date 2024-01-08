@@ -5,6 +5,7 @@ dependencies:
 - python==3.10
 - pyyaml
 - pip
+- lark
 - pip:
     - pyquaternion==0.9.9
     - nuscenes-devkit==1.1.11
@@ -13,3 +14,5 @@ dependencies:
     - shapely==1.8.5.post1
     - PySide2
     - gtsam==4.2.0
+    - empy==3.3.4
+    - catkin_pkg
